@@ -20,6 +20,14 @@ class Category:
             raise ValueError("name cannot be longer than 255 characters")
         if not self.name:
             raise ValueError("name cannot be empty")
+        
+    def activate(self):
+        self.is_active = True
+        self.validate()
+    
+    def deactivate(self):
+        self.is_active = False
+        self.validate()
 
     def __str__(self):
         return f'{self.name} - {self.description} (Active: {self.is_active})'

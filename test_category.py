@@ -82,3 +82,34 @@ class TestUpdateCategory:
 
         with pytest.raises(ValueError, match='name cannot be longer than 255 characters'):
             category.update_category(name=long_name, description='Long name category')
+
+class TestDeactivateCategory:
+    def test_deactivate_active_category(self):
+        category = Category(name='Movies', is_active=True)
+
+        category.deactivate()
+
+        assert category.is_active is False
+
+    def test_deactivate_already_inactive_category(self):
+        category = Category(name='Movies', is_active=False)
+
+        category.deactivate()
+
+        assert category.is_active is False
+
+class TestActivateCategory:
+
+    def test_activate_inactive_category(self):
+        category = Category(name='Movies', is_active=False)
+
+        category.activate()
+
+        assert category.is_active is True
+    
+    def test_activate_already_active_category(self):
+        category = Category(name='Movies', is_active=True)
+
+        category.activate()
+
+        assert category.is_active is True
