@@ -1,14 +1,17 @@
+from dataclasses import dataclass, field
+from uuid import UUID
 import uuid
 
 
+@dataclass
 class Category:
-    def __init__(self, name: str, id: uuid.UUID = None, description: str = "", is_active: bool = True):
-        self.name = name
-        self.validate()
+    name: str
+    id: UUID = field(default_factory=uuid.uuid4)
+    description: str = ""
+    is_active: bool = True
 
-        self.id = id or uuid.uuid4()
-        self.description = description
-        self.is_active = is_active
+    def __post_init__(self):
+        self.validate()
 
     def update_category(self, name: str, description: str):
         self.name = name
