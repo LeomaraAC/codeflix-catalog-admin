@@ -34,3 +34,8 @@ class Category:
 
     def __repr__(self):
         return f'<Category id={self.id} name={self.name}>'
+    
+    def __eq__(self, other):
+        if not isinstance(other, Category):
+            return False
+        return self.id == other.id

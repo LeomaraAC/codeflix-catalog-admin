@@ -113,3 +113,28 @@ class TestActivateCategory:
         category.activate()
 
         assert category.is_active is True
+
+class TestEquality:
+    def test_categories_with_same_id_are_equal(self):
+        cat_id = uuid.uuid4()
+        category1 = Category(name='Movies', id=cat_id)
+        category2 = Category(name='Films', id=cat_id)
+
+        assert category1 == category2
+
+    def test_categories_with_different_ids_are_not_equal(self):
+        category1 = Category(name='Movies', id=uuid.uuid4())
+        category2 = Category(name='Films', id=uuid.uuid4())
+
+        assert category1 != category2
+    
+    def test_category_not_equal_to_different_type(self):
+        class Dummy:
+            pass
+
+        cat_id = uuid.uuid4()
+        category = Category(name='Movies', id=cat_id)
+        dummy = Dummy()
+        dummy.id = cat_id
+
+        assert category != dummy
