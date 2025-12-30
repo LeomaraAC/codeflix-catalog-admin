@@ -34,3 +34,26 @@ class TestGetById:
         response = repository.get_by_id(id = not_found_id)
 
         assert response is None
+
+class TestDelete:
+    def test_can_delete_category_by_id(self):
+        category_film = Category(name='Films', description='Category for films')
+        category_series = Category(name='Series', description='Category for series')
+        repository = InMemoryCategoryRepository(categories=[category_film, category_series])
+
+        repository.delete(id=category_film.id)
+
+        assert len(repository.categories) == 1
+        assert repository.categories[0] == category_series
+
+    def test_when_category_does_not_exist_then_no_effect(self):
+        category_film = Category(name='Films', description='Category for films')
+        category_series = Category(name='Series', description='Category for series')
+        repository = InMemoryCategoryRepository(categories=[category_film, category_series])
+        not_found_id = uuid.uuid4()
+
+        repository.delete(id=not_found_id)
+
+        assert len(repository.categories) == 2
+        assert repository.categories[0] == category_film
+        assert repository.categories[1] == category_series
