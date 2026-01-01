@@ -146,3 +146,23 @@ class TestUpdate:
         assert repository.categories[0].name == category_film.name
         assert repository.categories[0].description == category_film.description
         assert repository.categories[0].is_active == category_film.is_active
+
+class TestList:
+    def test_when_no_category_then_return_empty_list(self):
+        repository = InMemoryCategoryRepository(categories=[])
+
+        response = repository.list()
+
+        assert response == []
+
+    def test_when_category_exists_then_return_mapped_list(self):
+        category_film = Category(name='Films', description='Category for films')
+        category_series = Category(name='Series', description='Category for series', is_active=False)
+
+        repository = InMemoryCategoryRepository(categories=[category_film, category_series])
+
+        response = repository.list()
+
+        assert len(response) == 2
+        assert category_film in response
+        assert category_series in response

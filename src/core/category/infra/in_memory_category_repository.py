@@ -27,3 +27,6 @@ class InMemoryCategoryRepository(CategoryRepository):
             return
         index = self.categories.index(category)
         self.categories[index] = category
+
+    def list(self) -> List[Category]:
+        return [category for category in self.categories]
