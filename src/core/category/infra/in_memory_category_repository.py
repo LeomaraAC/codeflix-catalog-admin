@@ -21,3 +21,9 @@ class InMemoryCategoryRepository(CategoryRepository):
             return
         self.categories.remove(category)
         # self.categories = [category for category in self.categories if category.id != id]
+
+    def update(self, category: Category) -> None:
+        if not category in self.categories:
+            return
+        index = self.categories.index(category)
+        self.categories[index] = category
