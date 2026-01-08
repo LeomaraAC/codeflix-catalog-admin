@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from src.core.category.application.category_repository import CategoryRepository
+from src.core.category.domain.category_repository import CategoryRepository
 from src.core.category.application.usecase.create_category import CreateCategory, CreateCategoryRequest, CreateCategoryResponse
 from src.core.category.application.usecase.exceptions import InvalidCategoryData
 

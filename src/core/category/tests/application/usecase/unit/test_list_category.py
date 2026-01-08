@@ -1,7 +1,8 @@
 from unittest.mock import create_autospec
 
-from src.core.category.application.category_repository import CategoryRepository
-from src.core.category.application.usecase.list_category import ListCategory, ListCategoryResponse, CategoryOutput
+from src.core.category.domain.category_repository import CategoryRepository
+from src.core.category.application.usecase.list_category import ListCategory, ListCategoryResponse, CategoryOutput, \
+    ListCategoryRequest
 from src.core.category.domain.category import Category
 
 
@@ -11,7 +12,7 @@ class TestListCategory:
         mock_repository.list.return_value = []
 
         use_case = ListCategory(repository=mock_repository)
-        response = use_case.execute()
+        response = use_case.execute(request=ListCategoryRequest())
 
         assert response == ListCategoryResponse(data=[])
 
@@ -23,7 +24,7 @@ class TestListCategory:
         mock_repository.list.return_value = [category_film, category_series]
 
         use_case = ListCategory(repository=mock_repository)
-        response = use_case.execute()
+        response = use_case.execute(request=ListCategoryRequest())
 
 
         assert len(response.data) == 2

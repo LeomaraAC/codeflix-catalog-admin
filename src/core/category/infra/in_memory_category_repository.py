@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from src.core.category.application.category_repository import CategoryRepository
+from src.core.category.domain.category_repository import CategoryRepository
 from src.core.category.domain.category import Category
 
 

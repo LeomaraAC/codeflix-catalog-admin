@@ -3,7 +3,7 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from src.core.category.application.category_repository import CategoryRepository
+from src.core.category.domain.category_repository import CategoryRepository
 from src.core.category.application.usecase.exceptions import CategoryNotFound, InvalidCategoryData
 from src.core.category.application.usecase.update_category import UpdateCategory, UpdateCategoryRequest
 from src.core.category.domain.category import Category

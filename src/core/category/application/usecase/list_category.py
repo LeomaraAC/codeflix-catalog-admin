@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from typing import List
 from uuid import UUID
 
-from src.core.category.application.category_repository import CategoryRepository
-from src.core.category.application.usecase.exceptions import CategoryNotFound
+from src.core.category.domain.category_repository import CategoryRepository
 
 
 @dataclass
@@ -14,6 +13,10 @@ class CategoryOutput:
     is_active: bool
 
 @dataclass
+class ListCategoryRequest:
+    pass
+
+@dataclass
 class ListCategoryResponse:
     data: List[CategoryOutput]
 
@@ -22,7 +25,7 @@ class ListCategory:
     def __init__(self, repository: CategoryRepository):
         self.repository = repository
 
-    def execute(self) -> ListCategoryResponse:
+    def execute(self, request: ListCategoryRequest) -> ListCategoryResponse:
         categories = self.repository.list()
 
         return ListCategoryResponse(data=[

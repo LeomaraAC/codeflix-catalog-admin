@@ -1,4 +1,5 @@
-from src.core.category.application.usecase.list_category import ListCategory, ListCategoryResponse, CategoryOutput
+from src.core.category.application.usecase.list_category import ListCategory, ListCategoryResponse, CategoryOutput, \
+    ListCategoryRequest
 from src.core.category.domain.category import Category
 from src.core.category.infra.in_memory_category_repository import InMemoryCategoryRepository
 
@@ -8,7 +9,7 @@ class TestListCategory:
         repository = InMemoryCategoryRepository(categories=[])
 
         use_case = ListCategory(repository=repository)
-        response = use_case.execute()
+        response = use_case.execute(request=ListCategoryRequest())
 
         assert response == ListCategoryResponse(data=[])
 
@@ -19,7 +20,7 @@ class TestListCategory:
         repository = InMemoryCategoryRepository(categories=[category_film, category_series])
 
         use_case = ListCategory(repository=repository)
-        response = use_case.execute()
+        response = use_case.execute(request=ListCategoryRequest())
 
 
         assert len(response.data) == 2
