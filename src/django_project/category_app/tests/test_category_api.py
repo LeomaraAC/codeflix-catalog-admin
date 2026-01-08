@@ -1,19 +1,31 @@
-from rest_framework.test import APITestCase
+import pytest
+from rest_framework.test import APIClient
 
 from src.core.category.domain.category import Category
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 
 
-class TestCategoryAPI(APITestCase):
-    def test_list_categories(self):
-        category_films = Category(name='Films', description='Category for films')
-        category_series = Category(name='Series', description='Category for series', is_active=False)
-        repository = DjangoORMCategoryRepository()
+@pytest.mark.django_db
+class TestCategoryAPI:
+
+    @pytest.fixture
+    def category_films(self) -> Category:
+        return Category(name='Films', description='Category for films')
+
+    @pytest.fixture
+    def category_series(self) -> Category:
+        return Category(name='Series', description='Category for series', is_active=False)
+
+    @pytest.fixture
+    def repository(self) -> DjangoORMCategoryRepository:
+        return DjangoORMCategoryRepository()
+
+    def test_list_categories(self, category_films: Category, category_series: Category, repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
 
 
-        response = self.client.get('/api/categories/')
+        response = APIClient().get('/api/categories/')
 
         expected_data = [
             {
@@ -30,6 +42,6 @@ class TestCategoryAPI(APITestCase):
             }
         ]
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data, expected_data)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert response.data == expected_data
