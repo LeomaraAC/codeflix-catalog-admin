@@ -24,32 +24,35 @@ def repository() -> DjangoORMCategoryRepository:
 
 
 @pytest.mark.django_db
-class TestCategoryAPI:
-    def test_list_categories(self, category_films: Category, category_series: Category, repository: DjangoORMCategoryRepository):
+class TestListCategoryAPI:
+    def test_list_categories(self, category_films: Category, category_series: Category,
+                             repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
 
-
         response = APIClient().get('/api/categories/')
 
-        expected_data = [
-            {
-                "id": str(category_films.id),
-                "name": category_films.name,
-                "description": category_films.description,
-                "is_active": category_films.is_active
-            },
-            {
-                "id": str(category_series.id),
-                "name": category_series.name,
-                "description": category_series.description,
-                "is_active": category_series.is_active
-            }
-        ]
+        expected_data = {
+            'data': [
+                {
+                    "id": str(category_films.id),
+                    "name": category_films.name,
+                    "description": category_films.description,
+                    "is_active": category_films.is_active
+                },
+                {
+                    "id": str(category_series.id),
+                    "name": category_series.name,
+                    "description": category_series.description,
+                    "is_active": category_series.is_active
+                }
+            ]
+        }
 
         assert response.status_code == HTTP_200_OK
-        assert len(response.data) == 2
+        assert len(response.data['data']) == 2
         assert response.data == expected_data
+
 
 @pytest.mark.django_db
 class TestRetrieveCategoryAPI:
@@ -58,17 +61,20 @@ class TestRetrieveCategoryAPI:
 
         assert response.status_code == HTTP_400_BAD_REQUEST
 
-    def test_return_category_by_id(self, category_films: Category, category_series: Category, repository: DjangoORMCategoryRepository):
+    def test_return_category_by_id(self, category_films: Category, category_series: Category,
+                                   repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
 
         response = APIClient().get(f'/api/categories/{category_films.id}/')
 
         expected_data = {
-            "id": str(category_films.id),
-            "name": category_films.name,
-            "description": category_films.description,
-            "is_active": category_films.is_active
+            'data': {
+                "id": str(category_films.id),
+                "name": category_films.name,
+                "description": category_films.description,
+                "is_active": category_films.is_active
+            }
         }
 
         assert response.status_code == HTTP_200_OK
