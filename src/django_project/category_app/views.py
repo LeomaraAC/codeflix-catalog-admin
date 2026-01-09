@@ -4,14 +4,16 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_201_CREATED
 
+from src.core.category.application.usecase.create_category import CreateCategoryRequest, CreateCategory
 from src.core.category.application.usecase.exceptions import CategoryNotFound
 from src.core.category.application.usecase.get_category import GetCategory, GetCategoryRequest
 from src.core.category.application.usecase.list_category import ListCategoryRequest, ListCategory
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 from src.django_project.category_app.serializers import ListCategoryResponseSerializer, \
-    RetrieveCategoryRequestSerializer, RetrieveCategoryResponseSerializer
+    RetrieveCategoryRequestSerializer, RetrieveCategoryResponseSerializer, CreateCategoryRequestSerializer, \
+    CreateCategoryResponseSerializer
 
 
 class CategoryViewSet(viewsets.ViewSet):
@@ -35,3 +37,13 @@ class CategoryViewSet(viewsets.ViewSet):
 
         category_data = RetrieveCategoryResponseSerializer(instance=response)
         return Response(status=HTTP_200_OK, data=category_data.data)
+
+    def create(self, request: Request) -> Response:
+        serializer = CreateCategoryRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        input = CreateCategoryRequest(**serializer.validated_data)
+        use_case = CreateCategory(repository=DjangoORMCategoryRepository())
+        response = use_case.execute(request=input)
+
+        return Response(status=HTTP_201_CREATED, data=CreateCategoryResponseSerializer(instance=response).data)
