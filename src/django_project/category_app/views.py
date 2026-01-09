@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NO
     HTTP_204_NO_CONTENT
 
 from src.core.category.application.usecase.create_category import CreateCategoryRequest, CreateCategory
+from src.core.category.application.usecase.delete_category import DeleteCategory, DeleteCategoryRequest
 from src.core.category.application.usecase.exceptions import CategoryNotFound
 from src.core.category.application.usecase.get_category import GetCategory, GetCategoryRequest
 from src.core.category.application.usecase.list_category import ListCategoryRequest, ListCategory
@@ -15,7 +16,7 @@ from src.core.category.application.usecase.update_category import UpdateCategory
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 from src.django_project.category_app.serializers import ListCategoryResponseSerializer, \
     RetrieveCategoryRequestSerializer, RetrieveCategoryResponseSerializer, CreateCategoryRequestSerializer, \
-    CreateCategoryResponseSerializer, UpdateCategoryRequestSerializer
+    CreateCategoryResponseSerializer, UpdateCategoryRequestSerializer, DeleteCategoryRequestSerializer
 
 
 class CategoryViewSet(viewsets.ViewSet):
@@ -57,6 +58,17 @@ class CategoryViewSet(viewsets.ViewSet):
         use_case = UpdateCategory(repository=DjangoORMCategoryRepository())
         try:
             use_case.execute(request=UpdateCategoryRequest(**serializer.validated_data))
+        except CategoryNotFound:
+            return Response(status=HTTP_404_NOT_FOUND)
+
+        return Response(status=HTTP_204_NO_CONTENT)
+
+    def destroy(self, request: Request, pk=None) -> Response:
+        serializer = DeleteCategoryRequestSerializer(data={'id': pk})
+        serializer.is_valid(raise_exception=True)
+        use_case = DeleteCategory(repository=DjangoORMCategoryRepository())
+        try:
+            use_case.execute(request=DeleteCategoryRequest(**serializer.validated_data))
         except CategoryNotFound:
             return Response(status=HTTP_404_NOT_FOUND)
 
