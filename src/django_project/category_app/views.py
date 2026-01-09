@@ -73,3 +73,14 @@ class CategoryViewSet(viewsets.ViewSet):
             return Response(status=HTTP_404_NOT_FOUND)
 
         return Response(status=HTTP_204_NO_CONTENT)
+
+    def partial_update(self, request: Request, pk=None) -> Response:
+        serializer = UpdateCategoryRequestSerializer(data={**request.data, 'id': pk}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        use_case = UpdateCategory(repository=DjangoORMCategoryRepository())
+        try:
+            use_case.execute(request=UpdateCategoryRequest(**serializer.validated_data))
+        except CategoryNotFound:
+            return Response(status=HTTP_404_NOT_FOUND)
+
+        return Response(status=HTTP_204_NO_CONTENT)

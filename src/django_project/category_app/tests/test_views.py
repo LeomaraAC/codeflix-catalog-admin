@@ -203,3 +203,100 @@ class TestDeleteCategoryAPI:
         response = APIClient().delete(f'/api/categories/{uuid4()}/')
 
         assert response.status_code == HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestPartialUpdateCategoryAPI:
+    def test_can_update_name_only(self, category_films: Category, repository: DjangoORMCategoryRepository):
+        repository.save(category_films)
+        payload = {
+            'name': 'Updated Films Name'
+        }
+
+        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+        assert response.status_code == HTTP_204_NO_CONTENT
+        updated_category = repository.get_by_id(category_films.id)
+        assert updated_category.name == payload['name']  # updated
+        assert updated_category.description == category_films.description  # unchanged
+        assert updated_category.is_active == category_films.is_active  # unchanged
+
+    def test_can_update_description_only(self, category_films: Category,
+                                         repository: DjangoORMCategoryRepository):
+        repository.save(category_films)
+
+        payload = {
+            'description': 'Partially updated description'
+        }
+
+        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+
+        assert response.status_code == HTTP_204_NO_CONTENT
+
+        updated_category = repository.get_by_id(category_films.id)
+
+        assert updated_category.name == category_films.name  # unchanged
+        assert updated_category.description == payload['description']  # updated
+        assert updated_category.is_active == category_films.is_active  # unchanged
+
+    def test_can_update_is_active_only(self, category_series: Category,
+                                       repository: DjangoORMCategoryRepository):
+        repository.save(category_series)
+
+        payload = {
+            'is_active': True
+        }
+
+        response = APIClient().patch(f'/api/categories/{category_series.id}/', data=payload)
+
+        assert response.status_code == HTTP_204_NO_CONTENT
+
+        updated_category = repository.get_by_id(category_series.id)
+
+        assert updated_category.name == category_series.name  # unchanged
+        assert updated_category.description == category_series.description  # unchanged
+        assert updated_category.is_active == payload['is_active']  # updated
+
+    def test_can_update_name_and_description(self, category_films: Category,
+                                             repository: DjangoORMCategoryRepository):
+        repository.save(category_films)
+
+        payload = {
+            'name': 'New Name',
+            'description': 'New Description'
+        }
+
+        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+
+        assert response.status_code == HTTP_204_NO_CONTENT
+
+        updated_category = repository.get_by_id(category_films.id)
+
+        assert updated_category.name == payload['name']  # updated
+        assert updated_category.description == payload['description']  # updated
+        assert updated_category.is_active == category_films.is_active  # unchanged
+
+    def test_when_category_not_found_then_return_404(self):
+        payload = {
+            'name': 'Nonexistent Category'
+        }
+
+        response = APIClient().patch(f'/api/categories/{uuid4()}/', data=payload)
+
+        assert response.status_code == HTTP_404_NOT_FOUND
+
+    def test_when_payload_is_empty_then_do_nothing(self, category_films: Category,
+                                                   repository: DjangoORMCategoryRepository):
+        repository.save(category_films)
+
+        payload = {}
+
+        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+
+        assert response.status_code == HTTP_204_NO_CONTENT
+
+        updated_category = repository.get_by_id(category_films.id)
+
+        assert updated_category.id == category_films.id
+        assert updated_category.name == category_films.name
+        assert updated_category.description == category_films.description
+        assert updated_category.is_active == category_films.is_active
