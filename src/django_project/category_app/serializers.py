@@ -21,10 +21,17 @@ class RetrieveCategoryRequestSerializer(serializers.Serializer):
 
 
 class CreateCategoryRequestSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=255)
+    name = serializers.CharField(max_length=255, allow_blank=False)
     description = serializers.CharField(required=False)
     is_active = serializers.BooleanField(required=False, default=True)
 
 
 class CreateCategoryResponseSerializer(serializers.Serializer):
     id = serializers.UUIDField()
+
+
+class UpdateCategoryRequestSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField(max_length=255, allow_blank=False)
+    description = serializers.CharField()
+    is_active = serializers.BooleanField()
