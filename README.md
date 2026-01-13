@@ -4,7 +4,7 @@ Sistema de administração de catálogo para a plataforma CodeFlix, desenvolvido
 
 ## 📋 Descrição
 
-Este projeto é uma API REST para gerenciamento de categorias de vídeos, construída com Django e Django REST Framework. A arquitetura foi projetada para ser desacoplada, testável e de fácil manutenção.
+Este projeto é uma API REST para gerenciamento de **categorias** e **gêneros** de vídeos, construída com Django e Django REST Framework. A arquitetura foi projetada para ser desacoplada, testável e de fácil manutenção.
 
 ## 🏗️ Arquitetura
 
@@ -13,19 +13,33 @@ O projeto segue a **Clean Architecture**, separando as responsabilidades em cama
 ```
 src/
 ├── core/                          # Núcleo da aplicação (independente de framework)
-│   └── category/
+│   ├── category/
+│   │   ├── domain/                # Entidades e contratos do domínio
+│   │   │   ├── category.py        # Entidade Category
+│   │   │   └── category_repository.py  # Interface do repositório
+│   │   ├── application/           # Casos de uso
+│   │   │   └── usecase/
+│   │   │       ├── create_category.py
+│   │   │       ├── delete_category.py
+│   │   │       ├── get_category.py
+│   │   │       ├── list_category.py
+│   │   │       └── update_category.py
+│   │   ├── infra/                 # Implementações de infraestrutura
+│   │   │   └── in_memory_category_repository.py
+│   │   └── tests/                 # Testes unitários e de integração
+│   │
+│   └── genre/
 │       ├── domain/                # Entidades e contratos do domínio
-│       │   ├── category.py        # Entidade Category
-│       │   └── category_repository.py  # Interface do repositório
+│       │   ├── genre.py           # Entidade Genre
+│       │   └── genre_repository.py  # Interface do repositório
 │       ├── application/           # Casos de uso
 │       │   └── usecase/
-│       │       ├── create_category.py
-│       │       ├── delete_category.py
-│       │       ├── get_category.py
-│       │       ├── list_category.py
-│       │       └── update_category.py
+│       │       ├── create_genre.py
+│       │       ├── delete_genre.py
+│       │       ├── list_genre.py
+│       │       └── update_genre.py
 │       ├── infra/                 # Implementações de infraestrutura
-│       │   └── in_memory_category_repository.py
+│       │   └── in_memory_genre_repository.py
 │       └── tests/                 # Testes unitários e de integração
 │
 └── django_project/                # Camada de infraestrutura Django
@@ -127,14 +141,23 @@ pytest
 ### Executar testes específicos
 
 ```bash
-# Testes unitários do domínio
+# Testes unitários do domínio - Category
 pytest src/core/category/tests/domain/
 
-# Testes unitários dos casos de uso
+# Testes unitários do domínio - Genre
+pytest src/core/genre/tests/domain/
+
+# Testes unitários dos casos de uso - Category
 pytest src/core/category/tests/application/usecase/unit/
 
-# Testes de integração dos casos de uso
+# Testes unitários dos casos de uso - Genre
+pytest src/core/genre/tests/application/usecase/unit/
+
+# Testes de integração dos casos de uso - Category
 pytest src/core/category/tests/application/usecase/integration/
+
+# Testes de integração dos casos de uso - Genre
+pytest src/core/genre/tests/application/usecase/integration/
 
 # Testes da camada Django
 pytest src/django_project/category_app/tests/
@@ -147,32 +170,59 @@ pytest src/tests_e2e/
 
 ```
 tests/
-├── domain/                        # Testes da entidade Category
-├── application/usecase/
-│   ├── unit/                      # Testes unitários (mock do repositório)
-│   └── integration/               # Testes de integração (repositório real)
-├── infra/                         # Testes do repositório in-memory
-└── tests_e2e/                     # Testes end-to-end
+├── category/
+│   ├── domain/                        # Testes da entidade Category
+│   ├── application/usecase/
+│   │   ├── unit/                      # Testes unitários (mock do repositório)
+│   │   └── integration/               # Testes de integração (repositório real)
+│   └── infra/                         # Testes do repositório in-memory
+│
+├── genre/
+│   ├── domain/                        # Testes da entidade Genre
+│   ├── application/usecase/
+│   │   ├── unit/                      # Testes unitários (mock do repositório)
+│   │   └── integration/               # Testes de integração (repositório real)
+│   └── infra/                         # Testes do repositório in-memory
+│
+└── tests_e2e/                         # Testes end-to-end
 ```
 
 ## 🎯 Casos de Uso
 
-### CreateCategory
+### Category
+
+#### CreateCategory
 Cria uma nova categoria no sistema.
 
-### GetCategory
+#### GetCategory
 Obtém os detalhes de uma categoria pelo ID.
 
-### ListCategory
+#### ListCategory
 Lista todas as categorias cadastradas.
 
-### UpdateCategory
+#### UpdateCategory
 Atualiza os dados de uma categoria existente.
 
-### DeleteCategory
+#### DeleteCategory
 Remove uma categoria do sistema.
 
-## 📝 Entidade Category
+### Genre
+
+#### CreateGenre
+Cria um novo gênero no sistema. Valida se todas as categorias associadas existem.
+
+#### ListGenre
+Lista todos os gêneros cadastrados.
+
+#### UpdateGenre
+Atualiza os dados de um gênero existente, incluindo as categorias associadas.
+
+#### DeleteGenre
+Remove um gênero do sistema.
+
+## 📝 Entidades
+
+### Category
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -181,11 +231,28 @@ Remove uma categoria do sistema.
 | `description` | string | Descrição da categoria (opcional) |
 | `is_active` | boolean | Status ativo/inativo |
 
-### Regras de Negócio
+#### Regras de Negócio
 
 - O nome da categoria é **obrigatório**
 - O nome não pode exceder **255 caracteres**
 - Uma categoria pode ser **ativada** ou **desativada**
+
+### Genre
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | UUID | Identificador único (gerado automaticamente) |
+| `name` | string | Nome do gênero (máx. 255 caracteres) |
+| `is_active` | boolean | Status ativo/inativo |
+| `categories` | set[UUID] | Conjunto de IDs das categorias associadas |
+
+#### Regras de Negócio
+
+- O nome do gênero é **obrigatório**
+- O nome não pode exceder **255 caracteres**
+- Um gênero pode ser **ativado** ou **desativado**
+- Um gênero pode estar associado a **múltiplas categorias**
+- Ao criar um gênero, todas as **categorias devem existir** no sistema
 
 ## 🤝 Contribuição
 
