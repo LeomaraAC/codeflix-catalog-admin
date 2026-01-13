@@ -8,7 +8,7 @@ from src.core.category.application.usecase.exceptions import CategoryNotFound
 from src.core.category.domain.category import Category
 
 
-class TestGetCategory:
+class TestDeleteCategory:
     def test_delete_category_from_repository(self):
         mock_category = Category(name='Films', description='Category for films')
         mock_repository = create_autospec(CategoryRepository)
