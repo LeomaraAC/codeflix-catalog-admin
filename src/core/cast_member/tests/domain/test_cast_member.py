@@ -28,7 +28,7 @@ class TestUpdateCastMember:
         new_name = 'John Doe'
         type = CastMemberType.ACTOR
         cast_member = CastMember(name='Marie Doe', type=CastMemberType.DIRECTOR)
-        cast_member.update_cast_member(name=new_name, type=type)
+        cast_member.update(name=new_name, type=type)
 
         assert cast_member.name == new_name
         assert cast_member.type == type
@@ -37,17 +37,17 @@ class TestUpdateCastMember:
         cast_member = CastMember(name='Marie Doe', type=CastMemberType.DIRECTOR)
 
         with pytest.raises(ValueError, match='type must be either ACTOR or DIRECTOR'):
-            cast_member.update_cast_member(name='John Doe', type='WRITER')
+            cast_member.update(name='John Doe', type='WRITER')
 
     def test_update_cast_member_with_invalid_name(self):
         new_name = 'John Doe' * 200
         cast_member = CastMember(name='Marie Doe', type=CastMemberType.DIRECTOR)
 
         with pytest.raises(ValueError, match='name cannot be longer than 255 characters'):
-            cast_member.update_cast_member(name=new_name, type=CastMemberType.ACTOR)
+            cast_member.update(name=new_name, type=CastMemberType.ACTOR)
 
     def test_update_cast_member_with_empty_name(self):
         cast_member = CastMember(name='John Doe', type=CastMemberType.ACTOR)
 
         with pytest.raises(ValueError, match='name cannot be empty'):
-            cast_member.update_cast_member(name="", type=CastMemberType.ACTOR)
+            cast_member.update(name="", type=CastMemberType.ACTOR)

@@ -25,7 +25,7 @@ class CastMember:
         if self.type not in CastMemberType:
             raise ValueError("type must be either ACTOR or DIRECTOR")
 
-    def update_cast_member(self, name: str, type: CastMemberType):
+    def update(self, name: str, type: CastMemberType):
         self.name = name
         self.type = type
         self.__validate()
