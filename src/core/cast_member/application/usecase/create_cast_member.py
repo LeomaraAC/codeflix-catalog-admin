@@ -6,7 +6,7 @@ from src.core.cast_member.domain.cast_member import CastMemberType, CastMember
 from src.core.cast_member.domain.cast_member_repository import CastMemberRepository
 
 
-class CreateCastMemberUseCase:
+class CreateCastMember:
 
     def __init__(self, repository: CastMemberRepository):
         self.repository = repository
