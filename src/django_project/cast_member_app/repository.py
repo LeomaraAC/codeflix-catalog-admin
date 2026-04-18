@@ -11,20 +11,13 @@ class DjangoORMCastMemberRepository(CastMemberRepository):
         self.cast_member_orm = cast_member_orm
 
     def save(self, cast_member: CastMember) -> None:
-        self.cast_member_orm.objects.create(
-            id=cast_member.id,
-            name=cast_member.name,
-            type=cast_member.type
-        )
+        cast_member_model = CastMemberModelMapper.to_model_orm(cast_member)
+        cast_member_model.save()
 
     def get_by_id(self, id: UUID) -> CastMember | None:
         try:
             cast_member_record = self.cast_member_orm.objects.get(id=id)
-            return CastMember(
-                id=cast_member_record.id,
-                name=cast_member_record.name,
-                type=cast_member_record.type
-            )
+            return CastMemberModelMapper.to_entity(cast_member_record)
         except self.cast_member_orm.DoesNotExist:
             return None
 
@@ -39,9 +32,24 @@ class DjangoORMCastMemberRepository(CastMemberRepository):
 
     def list(self) -> List[CastMember]:
         return [
-            CastMember(
-                id=record.id,
-                name=record.name,
-                type=record.type
-            ) for record in self.cast_member_orm.objects.all()
+            CastMemberModelMapper.to_entity(record)
+            for record in self.cast_member_orm.objects.all()
         ]
+
+
+class CastMemberModelMapper:
+    @staticmethod
+    def to_model_orm(cast_member: CastMember) -> CastMemberORM:
+        return CastMemberORM(
+            id=cast_member.id,
+            name=cast_member.name,
+            type=cast_member.type,
+        )
+
+    @staticmethod
+    def to_entity(cast_member: CastMemberORM) -> CastMember:
+        return CastMember(
+            id=cast_member.id,
+            name=cast_member.name,
+            type=cast_member.type,
+        )
