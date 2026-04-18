@@ -11,7 +11,7 @@ class ListCastMember:
 
     @dataclass
     class Input:
-        pass
+        order_by: str = 'name'
 
     @dataclass
     class Output:
@@ -25,6 +25,9 @@ class ListCastMember:
 
     def execute(self, input: Input) -> Output:
         cast_members = self.cast_member_repository.list()
-        cast_members_output = [self.Output.CastMember(id=cast_member.id, name=cast_member.name, type=cast_member.type)
-                               for cast_member in cast_members]
+        cast_members_output = sorted(
+            [self.Output.CastMember(id=cast_member.id, name=cast_member.name, type=cast_member.type)
+             for cast_member in cast_members],
+            key=lambda cast_member: (getattr(cast_member, input.order_by) is None, getattr(cast_member, input.order_by, ""))
+        )
         return self.Output(data=cast_members_output)

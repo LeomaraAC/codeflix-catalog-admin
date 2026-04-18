@@ -35,3 +35,35 @@ class TestListCategory:
                            description=category_series.description, is_active=category_series.is_active),
         ])
 
+    def test_when_order_by_description_then_return_ordered_list(self):
+        category_film = Category(name='Films', description='Category for films')
+        category_series = Category(name='Series', description='About series', is_active=False)
+
+        mock_repository = create_autospec(CategoryRepository)
+        mock_repository.list.return_value = [category_film, category_series]
+
+        use_case = ListCategory(repository=mock_repository)
+        response = use_case.execute(request=ListCategoryRequest(order_by='description'))
+
+        assert len(response.data) == 2
+        assert response == ListCategoryResponse(data=[
+            CategoryOutput(id=category_series.id, name=category_series.name,
+                           description=category_series.description, is_active=category_series.is_active),
+            CategoryOutput(id=category_film.id, name=category_film.name,
+                           description=category_film.description, is_active=category_film.is_active),
+        ])
+
+    def test_when_order_by_description_with_none_then_none_last(self):
+        category_with_desc = Category(name='Films', description='A description')
+        category_no_desc = Category(name='Series', description=None)
+
+        mock_repository = create_autospec(CategoryRepository)
+        mock_repository.list.return_value = [category_no_desc, category_with_desc]
+
+        use_case = ListCategory(repository=mock_repository)
+        response = use_case.execute(request=ListCategoryRequest(order_by='description'))
+
+        assert len(response.data) == 2
+        assert response.data[0].description == 'A description'
+        assert response.data[1].description is None
+

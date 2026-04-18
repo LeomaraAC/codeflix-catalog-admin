@@ -63,8 +63,8 @@ class TestListGenreAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['data']
 
-        romance_data = response.data['data'][0]
-        drama_data = response.data['data'][1]
+        romance_data = response.data['data'][1]
+        drama_data = response.data['data'][0]
 
         assert romance_data['id'] == str(genre_romance.id)
         assert romance_data['name'] == genre_romance.name

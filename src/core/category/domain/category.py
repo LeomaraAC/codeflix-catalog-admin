@@ -23,7 +23,7 @@ class Category(Entity):
         if not self.name:
             self.notification.add_error("name cannot be empty")
 
-        if len(self.description) > 1024:
+        if self.description and len(self.description) > 1024:
             self.notification.add_error("description cannot be longer than 1024 characters")
 
         if self.notification.has_errors:

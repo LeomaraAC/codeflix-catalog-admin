@@ -28,7 +28,23 @@ class TestListCastMember:
 
         assert len(response.data) == 2
         assert response == ListCastMember.Output(data=[
-            ListCastMember.Output.CastMember(id=john.id, name=john.name, type=john.type),
             ListCastMember.Output.CastMember(id=jane.id, name=jane.name, type=jane.type),
+            ListCastMember.Output.CastMember(id=john.id, name=john.name, type=john.type),
+        ])
+
+    def test_when_order_by_type_then_return_ordered_list(self):
+        john = CastMember(name='John Doe', type=CastMemberType.DIRECTOR)
+        jane = CastMember(name='Jane Smith', type=CastMemberType.ACTOR)
+
+        mock_repository = create_autospec(CastMemberRepository)
+        mock_repository.list.return_value = [john, jane]
+
+        use_case = ListCastMember(repository=mock_repository)
+        response = use_case.execute(input=ListCastMember.Input(order_by='type'))
+
+        assert len(response.data) == 2
+        assert response == ListCastMember.Output(data=[
+            ListCastMember.Output.CastMember(id=jane.id, name=jane.name, type=jane.type),
+            ListCastMember.Output.CastMember(id=john.id, name=john.name, type=john.type),
         ])
 

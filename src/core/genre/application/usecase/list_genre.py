@@ -19,7 +19,7 @@ class ListGenre:
 
     @dataclass
     class Input:
-        pass
+        order_by: str = 'name'
 
     @dataclass
     class Output:
@@ -28,12 +28,15 @@ class ListGenre:
     def execute(self, input: Input) -> Output:
         genres = self.repository.list()
 
-        mapped_genres = [
-            GenreOutput(
-                id=genre.id,
-                name=genre.name,
-                is_active=genre.is_active,
-                categories=genre.categories
-            ) for genre in genres
-        ]
+        mapped_genres = sorted(
+            [
+                GenreOutput(
+                    id=genre.id,
+                    name=genre.name,
+                    is_active=genre.is_active,
+                    categories=genre.categories
+                ) for genre in genres
+            ],
+            key=lambda genre: (getattr(genre, input.order_by) is None, getattr(genre, input.order_by, ""))
+        )
         return self.Output(data=mapped_genres)

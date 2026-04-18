@@ -36,6 +36,21 @@ class TestListGenre:
             ]
         )
 
+    def test_list_genre_ordered_by_name(self):
+        genre_repository = create_autospec(GenreRepository)
+        genre_romance = Genre(name='Romance')
+        genre_action = Genre(name='Action')
+        genre_drama = Genre(name='Drama')
+        genre_repository.list.return_value = [genre_romance, genre_action, genre_drama]
+
+        use_case = ListGenre(repository=genre_repository)
+        output = use_case.execute(input=ListGenre.Input(order_by='name'))
+
+        assert len(output.data) == 3
+        assert output.data[0].name == 'Action'
+        assert output.data[1].name == 'Drama'
+        assert output.data[2].name == 'Romance'
+
     def test_list_genre_empty_repository(self):
         genre_repository = create_autospec(GenreRepository)
         genre_repository.list.return_value = []

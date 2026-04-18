@@ -31,8 +31,9 @@ class CastMemberViewSet(viewsets.ViewSet):
         return Response(status=HTTP_201_CREATED, data=CreateCastMemberOutputSerializer(output).data)
 
     def list(self, request: Request) -> Response:
+        order_by = request.query_params.get('order_by', 'name')
         usecase = ListCastMember(repository=DjangoORMCastMemberRepository())
-        output: ListCastMember.Output = usecase.execute(ListCastMember.Input())
+        output: ListCastMember.Output = usecase.execute(ListCastMember.Input(order_by=order_by))
 
         return Response(status=HTTP_200_OK, data=ListCastMemberOutputSerializer(instance=output).data)
 

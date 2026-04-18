@@ -14,7 +14,7 @@ class CategoryOutput:
 
 @dataclass
 class ListCategoryRequest:
-    pass
+    order_by: str = 'name'
 
 @dataclass
 class ListCategoryResponse:
@@ -28,11 +28,11 @@ class ListCategory:
     def execute(self, request: ListCategoryRequest) -> ListCategoryResponse:
         categories = self.repository.list()
 
-        return ListCategoryResponse(data=[
+        return ListCategoryResponse(data=sorted([
             CategoryOutput(
                 id=category.id,
                 name=category.name,
                 description=category.description,
                 is_active=category.is_active
             ) for category in categories
-        ])
+        ], key=lambda category: (getattr(category, request.order_by) is None, getattr(category, request.order_by, ""))))
