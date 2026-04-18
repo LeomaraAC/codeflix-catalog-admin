@@ -1,31 +1,34 @@
-import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
-from uuid import UUID
+
+from src.core._shared.entity import Entity
 
 
 class CastMemberType(StrEnum):
     ACTOR = "ACTOR"
     DIRECTOR = "DIRECTOR"
 
+
 @dataclass
-class CastMember:
+class CastMember(Entity):
     name: str
     type: CastMemberType
-    id: UUID = field(default_factory=uuid.uuid4)
 
     def __post_init__(self):
-        self.__validate()
+        self.validate()
 
-    def __validate(self):
+    def validate(self):
         if not self.name:
-            raise ValueError("name cannot be empty")
+            self.notification.add_error("name cannot be empty")
         if len(self.name) > 255:
-            raise ValueError("name cannot be longer than 255 characters")
+            self.notification.add_error("name cannot be longer than 255 characters")
         if self.type not in CastMemberType:
-            raise ValueError("type must be either ACTOR or DIRECTOR")
+            self.notification.add_error("type must be either ACTOR or DIRECTOR")
+
+        if self.notification.has_errors:
+            raise ValueError(self.notification.messages)
 
     def update(self, name: str, type: CastMemberType):
         self.name = name
         self.type = type
-        self.__validate()
+        self.validate()

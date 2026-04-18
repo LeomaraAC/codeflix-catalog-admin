@@ -1,12 +1,11 @@
-from dataclasses import dataclass, field
-from uuid import UUID
-import uuid
+from dataclasses import dataclass
+
+from src.core._shared.entity import Entity
 
 
-@dataclass
-class Category:
+@dataclass(eq=False)
+class Category(Entity):
     name: str
-    id: UUID = field(default_factory=uuid.uuid4)
     description: str = ""
     is_active: bool = True
 
@@ -20,14 +19,20 @@ class Category:
 
     def validate(self):
         if len(self.name) > 255:
-            raise ValueError("name cannot be longer than 255 characters")
+            self.notification.add_error("name cannot be longer than 255 characters")
         if not self.name:
-            raise ValueError("name cannot be empty")
-        
+            self.notification.add_error("name cannot be empty")
+
+        if len(self.description) > 1024:
+            self.notification.add_error("description cannot be longer than 1024 characters")
+
+        if self.notification.has_errors:
+            raise ValueError(self.notification.messages)
+
     def activate(self):
         self.is_active = True
         self.validate()
-    
+
     def deactivate(self):
         self.is_active = False
         self.validate()
@@ -37,8 +42,3 @@ class Category:
 
     def __repr__(self):
         return f'<Category id={self.id} name={self.name}>'
-    
-    def __eq__(self, other):
-        if not isinstance(other, Category):
-            return False
-        return self.id == other.id

@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 from uuid import UUID
-import uuid
+
+from src.core._shared.entity import Entity
 
 
-@dataclass
-class Genre:
+@dataclass(eq=False)
+class Genre(Entity):
     name: str
-    id: UUID = field(default_factory=uuid.uuid4)
     is_active: bool = True
     categories: set[UUID] = field(default_factory=set)
 
@@ -19,9 +19,12 @@ class Genre:
 
     def validate(self):
         if len(self.name) > 255:
-            raise ValueError('name cannot be longer than 255 characters')
+            self.notification.add_error('name cannot be longer than 255 characters')
         if not self.name:
-            raise ValueError('name cannot be empty')
+            self.notification.add_error('name cannot be empty')
+
+        if self.notification.has_errors:
+            raise ValueError(self.notification.messages)
 
     def activate(self):
         self.is_active = True
@@ -44,8 +47,3 @@ class Genre:
 
     def __repr__(self):
         return f'<Genre id={self.id} name={self.name}>'
-
-    def __eq__(self, other):
-        if not isinstance(other, Genre):
-            return False
-        return self.id == other.id
