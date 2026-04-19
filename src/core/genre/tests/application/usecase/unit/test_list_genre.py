@@ -1,6 +1,7 @@
 from unittest.mock import create_autospec
 from uuid import uuid4
 
+from src.core._shared.application.list_response import ListResponse, ListOutputMeta
 from src.core.genre.application.usecase.list_genre import ListGenre, GenreOutput
 from src.core.genre.domain.genre import Genre
 from src.core.genre.domain.genre_repository import GenreRepository
@@ -19,7 +20,7 @@ class TestListGenre:
 
         genre_repository.list.assert_called_once()
         assert len(output.data) == 2
-        assert output == ListGenre.Output(
+        assert output == ListResponse(
             data=[
                 GenreOutput(
                     id=genre_drama.id,
@@ -33,10 +34,11 @@ class TestListGenre:
                     categories=set(),
                     is_active=genre_romance.is_active,
                 ),
-            ]
+            ],
+            meta=ListOutputMeta(current_page=1, per_page=2, total=2)
         )
 
-    def test_list_genre_ordered_by_name(self):
+    def test_list_genre_ordered_by_name_with_pagination(self):
         genre_repository = create_autospec(GenreRepository)
         genre_romance = Genre(name='Romance')
         genre_action = Genre(name='Action')
@@ -44,12 +46,11 @@ class TestListGenre:
         genre_repository.list.return_value = [genre_romance, genre_action, genre_drama]
 
         use_case = ListGenre(repository=genre_repository)
-        output = use_case.execute(input=ListGenre.Input(order_by='name'))
+        output = use_case.execute(input=ListGenre.Input(order_by='name', current_page=2))
 
-        assert len(output.data) == 3
-        assert output.data[0].name == 'Action'
-        assert output.data[1].name == 'Drama'
-        assert output.data[2].name == 'Romance'
+        assert len(output.data) == 1
+        assert output.data[0].name == 'Romance'
+        assert output.meta == ListOutputMeta(current_page=2, per_page=2, total=3)
 
     def test_list_genre_empty_repository(self):
         genre_repository = create_autospec(GenreRepository)
@@ -60,4 +61,4 @@ class TestListGenre:
 
         genre_repository.list.assert_called_once()
         assert len(output.data) == 0
-        assert output == ListGenre.Output(data=[])
+        assert output == ListResponse(data=[], meta=ListOutputMeta(current_page=1, per_page=2, total=0))

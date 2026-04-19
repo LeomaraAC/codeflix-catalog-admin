@@ -76,6 +76,28 @@ class TestListGenreAPI:
         assert drama_data['is_active'] == genre_drama.is_active
         assert drama_data['categories'] == []
 
+    def test_list_genre_ordered_by_name_with_pagination(
+            self,
+            genre_repository: DjangoORMGenreRepository,
+            category_repository: DjangoORMCategoryRepository,
+            genre_romance: Genre,
+            genre_drama: Genre
+    ):
+        # Save genres
+        genre_repository.save(genre_romance)
+        genre_repository.save(genre_drama)
+        genre_repository.save(Genre(name='Action', is_active=False))
+
+        # Make API call to list genres ordered by name
+        response = APIClient().get('/api/genres/?order_by=name&current_page=2')
+
+        # Verify response
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['data']
+        assert len(response.data['data']) == 1
+        assert response.data['data'][0]['name'] == 'Romance'
+        assert response.data['meta'] == {'current_page': 2, 'per_page': 2, 'total': 3}
+
 
 @pytest.mark.django_db
 class TestCreateGenreAPI:
@@ -121,7 +143,6 @@ class TestDeleteGenreAPI:
         assert genre_repository.get_by_id(id=genre_romance.id) is None
 
     def test_when_genre_does_nost_exist_then_return_404(self):
-
         # Make API call to delete non-existent genre
         response = APIClient().delete(f'/api/genres/{uuid.uuid4()}/')
 
@@ -135,14 +156,15 @@ class TestDeleteGenreAPI:
         # Verify response
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+
 @pytest.mark.django_db
 class TestUpdateGenreAPI:
     def test_when_request_data_is_valid_then_update_genre(
-        self,
-        category_repository: DjangoORMCategoryRepository,
-        category_documentary: Category,
-        genre_repository: DjangoORMGenreRepository,
-        genre_romance: Genre,
+            self,
+            category_repository: DjangoORMCategoryRepository,
+            category_documentary: Category,
+            genre_repository: DjangoORMGenreRepository,
+            genre_romance: Genre,
     ) -> None:
         genre_repository.save(genre_romance)
 
@@ -161,8 +183,8 @@ class TestUpdateGenreAPI:
         assert updated_genre.categories == {category_documentary.id}
 
     def test_when_request_data_is_invalid_then_return_400(
-        self,
-        genre_drama: Genre,
+            self,
+            genre_drama: Genre,
     ) -> None:
         url = f'/api/genres/{str(genre_drama.id)}/'
         data = {
@@ -176,12 +198,12 @@ class TestUpdateGenreAPI:
         assert response.data == {'name': ['This field may not be blank.']}
 
     def test_when_related_categories_do_not_exist_then_return_400(
-        self,
-        category_repository: DjangoORMCategoryRepository,
-        category_movie: Category,
-        category_documentary: Category,
-        genre_repository: DjangoORMGenreRepository,
-        genre_romance: Genre,
+            self,
+            category_repository: DjangoORMCategoryRepository,
+            category_movie: Category,
+            category_documentary: Category,
+            genre_repository: DjangoORMGenreRepository,
+            genre_romance: Genre,
     ) -> None:
         genre_repository.save(genre_romance)
 

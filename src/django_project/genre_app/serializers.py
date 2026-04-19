@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from src.django_project._shared.serializers import ListOutputMetaSerializer
+
 
 class SetField(serializers.ListField):
     def to_representation(self, value):
@@ -17,6 +19,7 @@ class GenreOutputSerializer(serializers.Serializer):
 
 class ListGenreOutputSerializer(serializers.Serializer):
     data = GenreOutputSerializer(many=True)
+    meta = ListOutputMetaSerializer()
 
 class CreateGenreInputSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255, allow_blank=False)

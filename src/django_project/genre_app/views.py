@@ -3,6 +3,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
 
+from src.core._shared.application.list_response import ListResponse
 from src.core.genre.application.exceptions import InvalidGenre, RelatedCategoriesNotFound, GenreNotFound
 from src.core.genre.application.usecase.create_genre import CreateGenre
 from src.core.genre.application.usecase.delete_genre import DeleteGenre
@@ -17,8 +18,9 @@ from src.django_project.genre_app.serializers import ListGenreOutputSerializer, 
 class GenreViewSet(viewsets.ViewSet):
     def list(self, request: Request) -> Response:
         order_by = request.query_params.get('order_by', 'name')
+        current_page = int(request.query_params.get('current_page', 1))
         use_case = ListGenre(repository=DjangoORMGenreRepository())
-        output: ListGenre.Output = use_case.execute(input=ListGenre.Input(order_by=order_by))
+        output: ListResponse = use_case.execute(input=ListGenre.Input(order_by=order_by, current_page=current_page))
 
         response_serializer = ListGenreOutputSerializer(instance=output)
 
