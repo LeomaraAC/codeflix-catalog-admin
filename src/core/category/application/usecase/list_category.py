@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass
 from uuid import UUID
 
-from src.core._shared.list_utils import ListUtils
+from src.core._shared.application.list_response import ListResponse, ListOutputMeta
+from src.core._shared.application.list_utils import ListUtils
 from src.core.category.domain.category_repository import CategoryRepository
 
 
@@ -20,24 +20,11 @@ class ListCategoryRequest:
     current_page: int = 1
 
 
-@dataclass
-class ListOutputMeta:
-    current_page: int
-    per_page: int
-    total: int
-
-
-@dataclass
-class ListCategoryResponse:
-    data: List[CategoryOutput]
-    meta: ListOutputMeta = field(default_factory=ListOutputMeta)
-
-
 class ListCategory:
     def __init__(self, repository: CategoryRepository):
         self.repository = repository
 
-    def execute(self, request: ListCategoryRequest) -> ListCategoryResponse:
+    def execute(self, request: ListCategoryRequest) -> ListResponse[CategoryOutput]:
         categories = self.repository.list()
         sorted_categories = ListUtils.sort([
             CategoryOutput(
@@ -50,6 +37,7 @@ class ListCategory:
 
         categories_page = ListUtils.paginate(sorted_categories, current_page=request.current_page)
 
-        return ListCategoryResponse(data=categories_page,
-                                    meta=ListOutputMeta(current_page=request.current_page, per_page=ListUtils.DEFAULT_PAGE_SIZE,
-                                                        total=len(sorted_categories)))
+        return ListResponse[CategoryOutput](data=categories_page,
+                                            meta=ListOutputMeta(current_page=request.current_page,
+                                                                per_page=ListUtils.DEFAULT_PAGE_SIZE,
+                                                                total=len(sorted_categories)))
