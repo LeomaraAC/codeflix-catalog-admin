@@ -17,7 +17,7 @@ class TestCreateAndEditCategory:
     def test_user_can_create_and_edit_category(self, api_client: APIClient, base_url: str) -> None:
         # Acessa listagem e verifica que não tem nenhuma categoria criada
         list_response = api_client.get(base_url)
-        assert list_response.data == {'data': []}
+        assert list_response.data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}
 
         # Cria uma categoria
         create_response = api_client.post(
@@ -39,7 +39,8 @@ class TestCreateAndEditCategory:
                     'description': 'Movie description',
                     'is_active': True,
                 }
-            ]
+            ],
+            'meta': {'current_page': 1, 'per_page': 2, 'total': 1},
         }
 
         # Edita categoria criada
@@ -62,13 +63,14 @@ class TestCreateAndEditCategory:
                     'description': 'Documentary description',
                     'is_active': True,
                 }
-            ]
+            ],
+            'meta': {'current_page': 1, 'per_page': 2, 'total': 1},
         }
 
     def test_user_can_create_and_delete_category(self, api_client: APIClient, base_url: str) -> None:
         # Acessa listagem e verifica que não tem nenhuma categoria criada
         list_response = api_client.get(base_url)
-        assert list_response.data == {'data': []}
+        assert list_response.data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}
 
         # Cria uma categoria
         create_response = api_client.post(
@@ -90,7 +92,8 @@ class TestCreateAndEditCategory:
                     'description': 'Music description',
                     'is_active': True,
                 }
-            ]
+            ],
+            'meta': {'current_page': 1, 'per_page': 2, 'total': 1},
         }
 
         # Deleta categoria criada
@@ -98,4 +101,4 @@ class TestCreateAndEditCategory:
         assert delete_response.status_code == 204
 
         # Verifica que a listagem está vazia novamente
-        assert api_client.get(base_url).data == {'data': []}
+        assert api_client.get(base_url).data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}

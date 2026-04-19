@@ -2,7 +2,7 @@ from unittest.mock import create_autospec
 
 from src.core.category.domain.category_repository import CategoryRepository
 from src.core.category.application.usecase.list_category import ListCategory, ListCategoryResponse, CategoryOutput, \
-    ListCategoryRequest
+    ListCategoryRequest, ListOutputMeta
 from src.core.category.domain.category import Category
 
 
@@ -14,7 +14,7 @@ class TestListCategory:
         use_case = ListCategory(repository=mock_repository)
         response = use_case.execute(request=ListCategoryRequest())
 
-        assert response == ListCategoryResponse(data=[])
+        assert response == ListCategoryResponse(data=[], meta=ListOutputMeta(current_page=1, per_page=2, total=0))
 
     def test_when_category_exists_then_return__mapped_list(self):
         category_film = Category(name='Films', description='Category for films')
@@ -33,7 +33,7 @@ class TestListCategory:
                            description=category_film.description, is_active=category_film.is_active),
             CategoryOutput(id=category_series.id, name=category_series.name,
                            description=category_series.description, is_active=category_series.is_active),
-        ])
+        ], meta=ListOutputMeta(current_page=1, per_page=2, total=2))
 
     def test_when_order_by_description_then_return_ordered_list(self):
         category_film = Category(name='Films', description='Category for films')
@@ -51,7 +51,7 @@ class TestListCategory:
                            description=category_series.description, is_active=category_series.is_active),
             CategoryOutput(id=category_film.id, name=category_film.name,
                            description=category_film.description, is_active=category_film.is_active),
-        ])
+        ], meta=ListOutputMeta(current_page=1, per_page=2, total=2))
 
     def test_when_order_by_description_with_none_then_none_last(self):
         category_with_desc = Category(name='Films', description='A description')
