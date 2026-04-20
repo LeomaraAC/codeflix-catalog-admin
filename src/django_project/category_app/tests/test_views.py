@@ -20,6 +20,11 @@ def category_series() -> Category:
 
 
 @pytest.fixture
+def category_animation() -> Category:
+    return Category(name='Animation', description='Category for animations')
+
+
+@pytest.fixture
 def repository() -> DjangoORMCategoryRepository:
     return DjangoORMCategoryRepository()
 
@@ -54,6 +59,25 @@ class TestListCategoryAPI:
         assert response.status_code == HTTP_200_OK
         assert len(response.data['data']) == 2
         assert response.data == expected_data
+
+    def test_list_with_sorted_by_is_active_and_paginated(self, category_films: Category, category_series: Category,
+                                                         category_animation: Category,
+                                                         repository: DjangoORMCategoryRepository):
+        repository.save(category_films)
+        repository.save(category_series)
+        repository.save(category_animation)
+
+        response = APIClient().get('/api/categories/?order_by=is_active&current_page=2')
+
+        assert response.status_code == HTTP_200_OK
+        assert len(response.data['data']) == 1
+        assert response.data['meta'] == {'current_page': 2, 'per_page': 2, 'total': 3}
+        assert response.data['data'] == [{
+            'id': str(category_animation.id),
+            'name': category_animation.name,
+            'description': category_animation.description,
+            'is_active': category_animation.is_active
+        }]
 
 
 @pytest.mark.django_db

@@ -66,3 +66,20 @@ class TestListCategory:
         assert len(response.data) == 2
         assert response.data[0].description == 'A description'
         assert response.data[1].description is None
+
+    def test_with_paginated_list(self):
+        category_film = Category(name='Films', description='Category for films')
+        category_series = Category(name='Series', description='About series', is_active=False)
+        animation_series = Category(name='Animation', description='Category for Animations', is_active=False)
+
+        mock_repository = create_autospec(CategoryRepository)
+        mock_repository.list.return_value = [category_film, category_series, animation_series]
+
+        use_case = ListCategory(repository=mock_repository)
+        response = use_case.execute(request=ListCategoryRequest(current_page=2))
+
+        assert len(response.data) == 1
+        assert response == ListResponse(data=[
+            CategoryOutput(id=category_series.id, name=category_series.name,
+                           description=category_series.description, is_active=category_series.is_active)
+        ], meta=ListOutputMeta(current_page=2, per_page=2, total=3))
