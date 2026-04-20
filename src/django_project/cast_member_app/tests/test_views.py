@@ -22,6 +22,10 @@ def jane() -> CastMember:
 def john() -> CastMember:
     return CastMember(name='John Doe', type=CastMemberType.DIRECTOR)
 
+@pytest.fixture
+def samantha() -> CastMember:
+    return CastMember(name='Samantha', type=CastMemberType.ACTOR)
+
 
 @pytest.mark.django_db
 class TestCreateCastMemberAPI:
@@ -143,7 +147,27 @@ class TestListCastMemberAPI:
         assert john_data['name'] == john.name
         assert john_data['type'] == john.type
 
+        assert response.data['meta'] == {'current_page': 1, 'per_page': 2, 'total': 2}
+
     def test_list_empty_cast_members(self, repository: DjangoORMCastMemberRepository):
         response = APIClient().get('/api/cast_members/')
         assert response.status_code == HTTP_200_OK
         assert len(response.data['data']) == 0
+        assert response.data['meta'] == {'current_page': 1, 'per_page': 2, 'total': 0}
+
+    def test_list_sorted_by_type_and_paginated(self, repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember, samantha: CastMember):
+        repository.save(john)
+        repository.save(jane)
+        repository.save(samantha)
+
+        response = APIClient().get('/api/cast_members/?order_by=type&current_page=2')
+
+        assert response.status_code == HTTP_200_OK
+        assert response.data['meta'] == {'current_page': 2, 'per_page': 2, 'total': 3}
+        assert len(response.data['data']) == 1
+
+        john_data = response.data['data'][0]
+
+        assert john_data['id'] == str(john.id)
+        assert john_data['name'] == john.name
+        assert john_data['type'] == john.type

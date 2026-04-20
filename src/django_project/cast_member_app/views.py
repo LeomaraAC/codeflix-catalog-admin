@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, HTTP_404_NOT_FOUND, \
     HTTP_204_NO_CONTENT
 
+from src.core._shared.application.list_response import ListResponse
 from src.core.cast_member.application.exceptions import InvalidCastMember, CastMemberNotFound
 from src.core.cast_member.application.usecase.create_cast_member import CreateCastMember
 from src.core.cast_member.application.usecase.delete_cast_member import DeleteCastMember
@@ -32,8 +33,9 @@ class CastMemberViewSet(viewsets.ViewSet):
 
     def list(self, request: Request) -> Response:
         order_by = request.query_params.get('order_by', 'name')
+        current_page = int(request.query_params.get('current_page', 1))
         usecase = ListCastMember(repository=DjangoORMCastMemberRepository())
-        output: ListCastMember.Output = usecase.execute(ListCastMember.Input(order_by=order_by))
+        output: ListResponse = usecase.execute(ListCastMember.Input(order_by=order_by, current_page=current_page))
 
         return Response(status=HTTP_200_OK, data=ListCastMemberOutputSerializer(instance=output).data)
 
