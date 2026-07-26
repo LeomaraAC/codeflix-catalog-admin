@@ -2,15 +2,39 @@ from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
+
+from src.core.video.application.exceptions import RelatedEntitiesNotFound, InvalidVideo, VideoNotFound
+from src.core.video.application.usecase.get_video import GetVideo
+from src.core.video.application.usecase.list_video import ListVideo
 from src.core.video.application.usecase.create_video_without_media import CreateVideoWithoutMedia
-from src.core.video.application.exceptions import RelatedEntitiesNotFound, InvalidVideo
-from src.django_project.video_app.serializers import CreateVideoInputSerializer, CreateVideoOutputSerializer
+from src.django_project.video_app.serializers import CreateVideoInputSerializer, CreateVideoOutputSerializer, \
+    ListVideoOutputSerializer, RetrieveVideoInputSerializer, RetrieveVideoOutputSerializer
 from src.django_project.cast_member_app.repository import DjangoORMCastMemberRepository
 from src.django_project.genre_app.repository import DjangoORMGenreRepository
 from src.django_project.video_app.repository import DjangoORMVideoRepository
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 
 class VideoViewSet(viewsets.ViewSet):
+
+    def list(self, request: Request) -> Response:
+        order_by = request.query_params.get('order_by', 'title')
+        current_page = int(request.query_params.get('current_page', 1))
+        usecase = ListVideo(repository=DjangoORMVideoRepository())
+        output = usecase.execute(ListVideo.Input(order_by=order_by, current_page=current_page))
+
+        return Response(status=HTTP_200_OK, data=ListVideoOutputSerializer(instance=output).data)
+
+    def retrieve(self, request: Request, pk=None) -> Response:
+        serializer = RetrieveVideoInputSerializer(data={'id': pk})
+        serializer.is_valid(raise_exception=True)
+
+        usecase = GetVideo(repository=DjangoORMVideoRepository())
+        try:
+            output = usecase.execute(GetVideo.Input(id=serializer.validated_data['id']))
+        except VideoNotFound:
+            return Response(status=HTTP_404_NOT_FOUND)
+
+        return Response(status=HTTP_200_OK, data=RetrieveVideoOutputSerializer(instance=output).data)
 
     def create(self, request: Request) -> Response:
         serializer = CreateVideoInputSerializer(data=request.data)

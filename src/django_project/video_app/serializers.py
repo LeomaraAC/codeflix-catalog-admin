@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from src.core.video.domain.value_objects import Rating
+from src.django_project._shared.serializers import ListOutputMetaSerializer
 
 class RatingTypeField(serializers.ChoiceField):
     def __init__(self, **kwargs):
@@ -32,6 +33,33 @@ class CreateVideoInputSerializer(serializers.Serializer):
     categories = SetField(child=serializers.UUIDField())
     genres = SetField(child=serializers.UUIDField())
     cast_members = SetField(child=serializers.UUIDField())
+
+
+class VideoOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    title = serializers.CharField(max_length=255)
+    description = serializers.CharField()
+    launch_year = serializers.IntegerField()
+    duration = serializers.DecimalField(max_digits=5, decimal_places=2)
+    published = serializers.BooleanField()
+    rating = RatingTypeField()
+    categories = SetField(child=serializers.UUIDField())
+    genres = SetField(child=serializers.UUIDField())
+    cast_members = SetField(child=serializers.UUIDField())
+
+
+class ListVideoOutputSerializer(serializers.Serializer):
+    data = VideoOutputSerializer(many=True)
+    meta = ListOutputMetaSerializer()
+
+
+class RetrieveVideoInputSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+
+class RetrieveVideoOutputSerializer(serializers.Serializer):
+    data = VideoOutputSerializer(source='*')
+
 
 class CreateVideoOutputSerializer(serializers.Serializer):
     id = serializers.UUIDField()

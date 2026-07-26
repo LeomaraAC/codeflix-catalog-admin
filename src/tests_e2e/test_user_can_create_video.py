@@ -52,3 +52,21 @@ class TestCreateVideo:
 
         assert create_video_response.status_code == 201
         assert create_video_response.data['id']
+
+        get_video_response = api_client.get(f"/api/videos/{create_video_response.data['id']}/")
+
+        assert get_video_response.status_code == 200
+        assert get_video_response.data == {
+            'data': {
+                'id': create_video_response.data['id'],
+                'title': 'John Wick',
+                'description': 'Action movie',
+                'launch_year': 2014,
+                'duration': '120.50',
+                'published': False,
+                'rating': 'AGE_16',
+                'categories': [category_response.data['id']],
+                'genres': [genre_response.data['id']],
+                'cast_members': [cast_member_response.data['id']],
+            }
+        }

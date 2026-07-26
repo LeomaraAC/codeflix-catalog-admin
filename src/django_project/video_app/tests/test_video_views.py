@@ -8,6 +8,7 @@ from src.core.cast_member.domain.cast_member import CastMember, CastMemberType
 from src.core.category.domain.category import Category
 from src.core.genre.domain.genre import Genre
 from src.core.video.domain.value_objects import Rating
+from src.core.video.domain.video import Video
 from src.django_project.cast_member_app.repository import DjangoORMCastMemberRepository
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 from src.django_project.genre_app.repository import DjangoORMGenreRepository
@@ -48,6 +49,30 @@ def cast_member_repository(cast_member_keanu: CastMember) -> DjangoORMCastMember
     repository = DjangoORMCastMemberRepository()
     repository.save(cast_member_keanu)
     return repository
+
+
+@pytest.fixture
+def persisted_video(
+    category_movie: Category,
+    category_repository: DjangoORMCategoryRepository,
+    genre_action: Genre,
+    genre_repository: DjangoORMGenreRepository,
+    cast_member_keanu: CastMember,
+    cast_member_repository: DjangoORMCastMemberRepository,
+) -> Video:
+    video = Video(
+        title='John Wick',
+        description='Action movie',
+        launch_year=2014,
+        duration=Decimal('120.50'),
+        published=False,
+        rating=Rating.AGE_16,
+        categories={category_movie.id},
+        genres={genre_action.id},
+        cast_members={cast_member_keanu.id},
+    )
+    DjangoORMVideoRepository().save(video)
+    return video
 
 
 @pytest.mark.django_db
@@ -108,3 +133,72 @@ class TestCreateVideoAPI:
         assert 'Categories with provided IDs not found' in response.data['error']
         assert 'Genres with provided IDs not found' in response.data['error']
         assert 'Cast members with provided IDs not found' in response.data['error']
+
+
+@pytest.mark.django_db
+class TestListVideoAPI:
+    def test_when_no_videos_exist_then_return_empty_list(self) -> None:
+        response = APIClient().get('/api/videos/')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {
+            'data': [],
+            'meta': {
+                'current_page': 1,
+                'per_page': 2,
+                'total': 0,
+            },
+        }
+
+    def test_when_videos_exist_then_return_paginated_list(self, persisted_video: Video) -> None:
+        response = APIClient().get('/api/videos/')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {
+            'data': [
+                {
+                    'id': str(persisted_video.id),
+                    'title': persisted_video.title,
+                    'description': persisted_video.description,
+                    'launch_year': persisted_video.launch_year,
+                    'duration': '120.50',
+                    'published': persisted_video.published,
+                    'rating': persisted_video.rating.name,
+                    'categories': [str(next(iter(persisted_video.categories)))],
+                    'genres': [str(next(iter(persisted_video.genres)))],
+                    'cast_members': [str(next(iter(persisted_video.cast_members)))],
+                }
+            ],
+            'meta': {
+                'current_page': 1,
+                'per_page': 2,
+                'total': 1,
+            },
+        }
+
+
+@pytest.mark.django_db
+class TestRetrieveVideoAPI:
+    def test_when_video_exists_then_return_200(self, persisted_video: Video) -> None:
+        response = APIClient().get(f'/api/videos/{persisted_video.id}/')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {
+            'data': {
+                'id': str(persisted_video.id),
+                'title': persisted_video.title,
+                'description': persisted_video.description,
+                'launch_year': persisted_video.launch_year,
+                'duration': '120.50',
+                'published': persisted_video.published,
+                'rating': persisted_video.rating.name,
+                'categories': [str(next(iter(persisted_video.categories)))],
+                'genres': [str(next(iter(persisted_video.genres)))],
+                'cast_members': [str(next(iter(persisted_video.cast_members)))],
+            }
+        }
+
+    def test_when_video_does_not_exist_then_return_404(self) -> None:
+        response = APIClient().get('/api/videos/95d0df35-0dbf-4e5d-a7e8-ee4fdf99597b/')
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

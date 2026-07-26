@@ -4,7 +4,7 @@ Sistema de administração de catálogo para a plataforma CodeFlix, desenvolvido
 
 ## 📋 Descrição
 
-Este projeto é uma API REST para gerenciamento de **categorias**, **gêneros** e **membros de elenco (cast members)** de vídeos, construída com Django e Django REST Framework. A arquitetura foi projetada para ser desacoplada, testável e de fácil manutenção.
+Este projeto é uma API REST para gerenciamento de **categorias**, **gêneros**, **membros de elenco (cast members)** e **vídeos**, construída com Django e Django REST Framework. A arquitetura foi projetada para ser desacoplada, testável e de fácil manutenção.
 
 ## 🏗️ Arquitetura
 
@@ -42,6 +42,20 @@ src/
 │   │   │   └── in_memory_genre_repository.py
 │   │   └── tests/                 # Testes unitários e de integração
 │   │
+│   ├── video/
+│   │   ├── domain/                # Entidades e contratos do domínio
+│   │   │   ├── video.py           # Entidade Video
+│   │   │   ├── value_objects.py   # Value objects do domínio
+│   │   │   └── video_repository.py  # Interface do repositório
+│   │   ├── application/           # Casos de uso
+│   │   │   └── usecase/
+│   │   │       ├── create_video_without_media.py
+│   │   │       ├── get_video.py
+│   │   │       └── list_video.py
+│   │   ├── infra/                 # Implementações de infraestrutura
+│   │   │   └── in_memory_video_repository.py
+│   │   └── tests/                 # Testes unitários e de integração
+│   │
 │   └── cast_member/
 │       ├── domain/                # Entidades e contratos do domínio
 │       │   ├── cast_member.py     # Entidade CastMember
@@ -71,12 +85,19 @@ src/
     │   ├── serializers.py         # Serializers DRF
     │   └── tests/                 # Testes de integração Django
     │
-    └── cast_member_app/
-        ├── models.py              # Model Django
-        ├── repository.py          # Implementação do repositório com ORM
-        ├── views.py               # ViewSet da API REST
-        ├── serializers.py         # Serializers DRF
-        └── tests/                 # Testes de integração Django
+    ├── cast_member_app/
+    │   ├── models.py              # Model Django
+    │   ├── repository.py          # Implementação do repositório com ORM
+    │   ├── views.py               # ViewSet da API REST
+    │   ├── serializers.py         # Serializers DRF
+    │   └── tests/                 # Testes de integração Django
+    │
+    └── video_app/
+      ├── models.py              # Model Django
+      ├── repository.py          # Implementação do repositório com ORM
+      ├── views.py               # ViewSet da API REST
+      ├── serializers.py         # Serializers DRF
+      └── tests/                 # Testes de integração Django
 ```
 
 ## 🚀 Tecnologias
@@ -154,6 +175,14 @@ python manage.py runserver
 | `PUT` | `/api/cast_members/{id}/` | Atualiza um membro de elenco |
 | `DELETE` | `/api/cast_members/{id}/` | Remove um membro de elenco |
 
+### Videos (`/api/videos/`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/api/videos/` | Lista todos os vídeos |
+| `GET` | `/api/videos/{id}/` | Obtém um vídeo específico |
+| `POST` | `/api/videos/` | Cria um novo vídeo |
+
 ### Exemplos de Requisição
 
 **Criar categoria:**
@@ -175,6 +204,22 @@ curl -X POST http://localhost:8000/api/genres/ \
 curl -X POST http://localhost:8000/api/cast_members/ \
   -H "Content-Type: application/json" \
   -d '{"name": "Robert Downey Jr.", "type": "ACTOR"}'
+```
+
+**Criar vídeo:**
+```bash
+curl -X POST http://localhost:8000/api/videos/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "John Wick",
+    "description": "Action movie",
+    "launch_year": 2014,
+    "duration": "120.50",
+    "rating": "AGE_16",
+    "categories": ["<category-uuid>"],
+    "genres": ["<genre-uuid>"],
+    "cast_members": ["<cast-member-uuid>"]
+  }'
 ```
 
 **Resposta (criação):**
@@ -217,7 +262,10 @@ pytest src/core/category/tests/application/usecase/unit/
 pytest src/core/genre/tests/application/usecase/unit/
 
 # Testes unitários dos casos de uso - CastMember
-pytest src/core/cast_member/tests/application/unit/
+pytest src/core/cast_member/tests/application/usecase/unit/
+
+# Testes unitários dos casos de uso - Video
+pytest src/core/video/tests/application/usecase/unit/
 
 # Testes de integração dos casos de uso - Category
 pytest src/core/category/tests/application/usecase/integration/
@@ -226,7 +274,10 @@ pytest src/core/category/tests/application/usecase/integration/
 pytest src/core/genre/tests/application/usecase/integration/
 
 # Testes de integração dos casos de uso - CastMember
-pytest src/core/cast_member/tests/application/integration/
+pytest src/core/cast_member/tests/application/usecase/integration/
+
+# Testes de integração dos casos de uso - Video
+pytest src/core/video/tests/application/usecase/integration/
 
 # Testes da camada Django - Category
 pytest src/django_project/category_app/tests/
@@ -236,6 +287,9 @@ pytest src/django_project/genre_app/tests/
 
 # Testes da camada Django - CastMember
 pytest src/django_project/cast_member_app/tests/
+
+# Testes da camada Django - Video
+pytest src/django_project/video_app/tests/
 
 # Testes E2E
 pytest src/tests_e2e/
@@ -261,7 +315,14 @@ tests/
 │
 ├── cast_member/
 │   ├── domain/                        # Testes da entidade CastMember
-│   ├── application/
+│   ├── application/usecase/
+│   │   ├── unit/                      # Testes unitários (mock do repositório)
+│   │   └── integration/               # Testes de integração (repositório real)
+│   └── infra/                         # Testes do repositório in-memory
+│
+├── video/
+│   ├── domain/                        # Testes da entidade Video
+│   ├── application/usecase/
 │   │   ├── unit/                      # Testes unitários (mock do repositório)
 │   │   └── integration/               # Testes de integração (repositório real)
 │   └── infra/                         # Testes do repositório in-memory
@@ -269,7 +330,8 @@ tests/
 ├── django_project/
 │   ├── category_app/tests/            # Testes de integração Django (Category)
 │   ├── genre_app/tests/               # Testes de integração Django (Genre)
-│   └── cast_member_app/tests/         # Testes de integração Django (CastMember)
+│   ├── cast_member_app/tests/         # Testes de integração Django (CastMember)
+│   └── video_app/tests/               # Testes de integração Django (Video)
 │
 └── tests_e2e/                         # Testes end-to-end
 ```
@@ -321,6 +383,17 @@ Atualiza os dados de um membro de elenco existente.
 #### DeleteCastMember
 Remove um membro de elenco do sistema.
 
+### Video
+
+#### CreateVideoWithoutMedia
+Cria um novo vídeo sem os arquivos de mídia. Valida se categorias, gêneros e membros de elenco associados existem.
+
+#### GetVideo
+Obtém os detalhes de um vídeo pelo ID.
+
+#### ListVideo
+Lista os vídeos cadastrados com suporte a ordenação e paginação.
+
 ## 📝 Entidades
 
 ### Category
@@ -368,6 +441,29 @@ Remove um membro de elenco do sistema.
 - O nome do membro de elenco é **obrigatório**
 - O nome não pode exceder **255 caracteres**
 - O tipo deve ser **ACTOR** (ator) ou **DIRECTOR** (diretor)
+
+### Video
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | UUID | Identificador único (gerado automaticamente) |
+| `title` | string | Título do vídeo (máx. 255 caracteres) |
+| `description` | string | Descrição do vídeo |
+| `launch_year` | integer | Ano de lançamento |
+| `duration` | decimal | Duração do vídeo |
+| `published` | boolean | Indica se o vídeo foi publicado |
+| `rating` | Rating | Classificação indicativa |
+| `categories` | set[UUID] | Conjunto de IDs das categorias associadas |
+| `genres` | set[UUID] | Conjunto de IDs dos gêneros associados |
+| `cast_members` | set[UUID] | Conjunto de IDs dos membros de elenco associados |
+
+#### Regras de Negócio
+
+- O título do vídeo é **obrigatório**
+- O título não pode exceder **255 caracteres**
+- A duração não pode ser **negativa**
+- Um vídeo pode estar associado a **múltiplas categorias**, **gêneros** e **membros de elenco**
+- Ao criar um vídeo, todas as entidades relacionadas informadas devem existir no sistema
 
 ## 🤝 Contribuição
 

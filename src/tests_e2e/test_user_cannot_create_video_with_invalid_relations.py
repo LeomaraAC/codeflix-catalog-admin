@@ -29,3 +29,15 @@ class TestCreateVideoErrors:
         assert 'Categories with provided IDs not found' in create_video_response.data['error']
         assert 'Genres with provided IDs not found' in create_video_response.data['error']
         assert 'Cast members with provided IDs not found' in create_video_response.data['error']
+
+        list_video_response = api_client.get('/api/videos/')
+
+        assert list_video_response.status_code == 200
+        assert list_video_response.data == {
+            'data': [],
+            'meta': {
+                'current_page': 1,
+                'per_page': 2,
+                'total': 0,
+            },
+        }
