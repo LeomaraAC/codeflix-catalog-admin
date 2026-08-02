@@ -3,8 +3,8 @@ from src.core.video.domain.video_repository import VideoRepository
 from uuid import UUID
 
 class InMemoryVideoRepository(VideoRepository):
-	def __init__(self):
-		self.videos: list[Video] = []
+	def __init__(self, videos: list[Video] = None):
+		self.videos: list[Video] = videos or []
 
 	def save(self, video: Video) -> None:
 		self.videos.append(video)
