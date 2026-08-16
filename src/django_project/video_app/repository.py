@@ -18,13 +18,13 @@ class DjangoORMVideoRepository(VideoRepository):
     
     def get_by_id(self, id: UUID) -> Video | None:
         try:
-            video_orm = VideoORM.objects.get(id=id)
+            video_orm = VideoORM.objects.get(pk=id)
         except VideoORM.DoesNotExist:
             return None
         return VideoModelMapper.to_entity(video_orm)
     
     def delete(self, id: UUID) -> None:
-        VideoORM.objects.filter(id=id).delete()
+        VideoORM.objects.filter(pk=id).delete()
 
     def update(self, video: Video) -> None:
         pass  # Implement the update method if needed
