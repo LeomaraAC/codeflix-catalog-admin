@@ -2,7 +2,7 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from src.core._shared.infrastructure.abstract_storage_service import AbstractStorageService
+from src.core._shared.infrastructure.storage.abstract_storage_service import AbstractStorageService
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating
 from src.core.video.domain.video import Video

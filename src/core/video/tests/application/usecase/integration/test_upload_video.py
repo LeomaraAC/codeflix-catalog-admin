@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from src.core._shared.infrastructure.abstract_storage_service import AbstractStorageService
+from src.core._shared.infrastructure.storage.abstract_storage_service import AbstractStorageService
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.application.usecase.upload_video import UploadVideo
 from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating

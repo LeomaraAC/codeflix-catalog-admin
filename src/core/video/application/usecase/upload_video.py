@@ -1,6 +1,6 @@
 from uuid import UUID
 from dataclasses import dataclass
-from src.core._shared.infrastructure.abstract_storage_service import AbstractStorageService
+from src.core._shared.infrastructure.storage.abstract_storage_service import AbstractStorageService
 from pathlib import Path
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus
