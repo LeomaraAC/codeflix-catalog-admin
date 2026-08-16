@@ -4,7 +4,7 @@ from uuid import UUID
 from src.core.video.domain.video import Video
 from src.core.video.domain.value_objects import Rating
 from src.core.video.domain.video_repository import VideoRepository
-from .models import Video as VideoORM
+from .models import Video as VideoORM, AudioVideoMedia as AudioVideoMediaORM
 
 
 class DjangoORMVideoRepository(VideoRepository):
@@ -27,7 +27,33 @@ class DjangoORMVideoRepository(VideoRepository):
         VideoORM.objects.filter(pk=id).delete()
 
     def update(self, video: Video) -> None:
-        pass  # Implement the update method if needed
+        try:
+            video_model = VideoORM.objects.get(pk=video.id)
+        except VideoORM.DoesNotExist:
+            return None
+        else:
+            with transaction.atomic():
+                AudioVideoMediaORM.objects.filter(id=video.id).delete()
+
+                video_model.categories.set(video.categories)
+                video_model.genres.set(video.genres)
+                video_model.cast_members.set(video.cast_members)
+
+                video_model.video = AudioVideoMediaORM.objects.create(
+                    name=video.video.name,
+                    raw_location=video.video.raw_location,
+                    encoded_location=video.video.encoded_location,
+                    status=video.video.status.name,
+                ) if video.video else None
+
+                video_model.title = video.title
+                video_model.description = video.description
+                video_model.launch_year = video.launch_year
+                video_model.duration = video.duration
+                video_model.rating = video.rating.name
+                video_model.published = video.published
+
+                video_model.save()
 
     def list(self) -> list[Video]:
         return [
