@@ -33,7 +33,8 @@ class DjangoORMVideoRepository(VideoRepository):
             return None
         else:
             with transaction.atomic():
-                AudioVideoMediaORM.objects.filter(id=video.id).delete()
+                if video_model.video:
+                    video_model.video.delete()
 
                 video_model.categories.set(video.categories)
                 video_model.genres.set(video.genres)

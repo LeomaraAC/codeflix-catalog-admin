@@ -197,6 +197,46 @@ class TestUpdate:
         assert updated_video.video.encoded_location == video_to_update.video.encoded_location
         assert updated_video.video.status == video_to_update.video.status.name
 
+    def test_when_updating_video_media_then_previous_media_is_deleted(self) -> None:
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            video=AudioVideoMedia(
+                name='john-wick.mp4',
+                raw_location='videos/john-wick.mp4',
+                encoded_location='',
+                status=MediaStatus.PENDING,
+            ),
+        )
+        repository = DjangoORMVideoRepository()
+        repository.save(video)
+
+        persisted_video = VideoORM.objects.get(id=video.id)
+        previous_media_id = persisted_video.video_id
+
+        video.update_video(
+            AudioVideoMedia(
+                name='john-wick-new.mp4',
+                raw_location='videos/john-wick-new.mp4',
+                encoded_location='',
+                status=MediaStatus.PENDING,
+            )
+        )
+        repository.update(video)
+
+        updated_video = VideoORM.objects.get(id=video.id)
+
+        assert AudioVideoMediaORM.objects.filter(id=previous_media_id).count() == 0
+        assert AudioVideoMediaORM.objects.count() == 1
+        assert updated_video.video.name == 'john-wick-new.mp4'
+
     def test_when_video_does_not_exist_then_no_effect(self) -> None:
         video = Video(
             title='John Wick',
