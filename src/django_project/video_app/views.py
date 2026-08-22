@@ -1,12 +1,16 @@
+from uuid import UUID
+
 from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
 
+from src.core._shared.infrastructure.storage.local_storage import LocalStorage
 from src.core.video.application.exceptions import RelatedEntitiesNotFound, InvalidVideo, VideoNotFound
 from src.core.video.application.usecase.get_video import GetVideo
 from src.core.video.application.usecase.list_video import ListVideo
 from src.core.video.application.usecase.create_video_without_media import CreateVideoWithoutMedia
+from src.core.video.application.usecase.upload_video import UploadVideo
 from src.django_project.video_app.serializers import CreateVideoInputSerializer, CreateVideoOutputSerializer, \
     ListVideoOutputSerializer, RetrieveVideoInputSerializer, RetrieveVideoOutputSerializer
 from src.django_project.cast_member_app.repository import DjangoORMCastMemberRepository
@@ -51,3 +55,16 @@ class VideoViewSet(viewsets.ViewSet):
             return Response(status=HTTP_400_BAD_REQUEST, data={'error': str(err)})
         
         return Response(status=HTTP_201_CREATED, data=CreateVideoOutputSerializer(output).data)
+
+    def partial_update(self, request: Request, pk: UUID =None) -> Response:
+        file = request.FILES['video_file']
+        content = file.read()
+        content_type = file.content_type
+
+        usecase = UploadVideo(video_repository=DjangoORMVideoRepository(), storage_service=LocalStorage())
+        try:
+            usecase.execute(UploadVideo.Input(video_id=pk, file_name=file.name, content=content, content_type=content_type))
+        except VideoNotFound:
+            return Response(status=HTTP_404_NOT_FOUND, data={'error': f'Video with id {pk} not found'})
+
+        return Response(status=HTTP_200_OK)
