@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from src.django_project.genre_app.models import Genre
+
+
+admin.site.register(Genre)
