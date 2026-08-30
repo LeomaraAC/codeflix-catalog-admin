@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import unique, Enum, auto
+from enum import StrEnum, unique, Enum, auto
 from uuid import UUID
 
 
@@ -31,4 +31,12 @@ class AudioVideoMedia:
     raw_location: str
     encoded_location: str
     status: MediaStatus
+
+@unique
+class MediaType(StrEnum):
+    VIDEO = "VIDEO"
+    TRAILER = "TRAILER"
+    BANNER = "BANNER"
+    THUMBNAIL = "THUMBNAIL"
+    THUMBNAIL_HALF = "THUMBNAIL_HALF"
 

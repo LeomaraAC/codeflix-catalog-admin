@@ -3,7 +3,9 @@ from uuid import uuid4
 
 import pytest
 
+from src.core._shared.events.absctract_message_bus import AbstractMessageBus
 from src.core._shared.infrastructure.storage.abstract_storage_service import AbstractStorageService
+from src.core.video.application.events.integration_events import AudioVideoMediaUpdatedIntegrationEvent
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.application.usecase.upload_video import UploadVideo
 from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating
@@ -26,8 +28,9 @@ class TestUploadVideo:
 
         video_repository = InMemoryVideoRepository(videos=[video])
         mock_storage = create_autospec(AbstractStorageService)
+        mock_message_bus = create_autospec(AbstractMessageBus)
 
-        use_case = UploadVideo(video_repository, mock_storage)
+        use_case = UploadVideo(video_repository, mock_storage, mock_message_bus)
 
         use_case.execute(
             UploadVideo.Input(
@@ -43,6 +46,12 @@ class TestUploadVideo:
             content=b'video content',
             content_type='video/mp4'
         )
+        mock_message_bus.handle.assert_called_once_with([
+            AudioVideoMediaUpdatedIntegrationEvent(
+                resource_id=f'{video.id}.VIDEO',
+                file_path=f'videos/{video.id}/trailer.mp4',
+            )
+        ])
 
         assert video.video == AudioVideoMedia(
             name='trailer.mp4',
@@ -59,7 +68,8 @@ class TestUploadVideo:
     def test_when_video_does_not_exist_should_raise_exception(self):
         video_repository = InMemoryVideoRepository(videos=[])
         mock_storage = create_autospec(AbstractStorageService)
-        use_case = UploadVideo(video_repository, mock_storage)
+        mock_message_bus = create_autospec(AbstractMessageBus)
+        use_case = UploadVideo(video_repository, mock_storage, mock_message_bus)
 
         video_id = uuid4()
 
@@ -72,3 +82,6 @@ class TestUploadVideo:
                     content_type='video/mp4'
                 )
             )
+
+        mock_storage.store.assert_not_called()
+        mock_message_bus.handle.assert_not_called()

@@ -2,7 +2,9 @@ from unittest.mock import create_autospec
 
 import pytest
 
+from src.core._shared.events.absctract_message_bus import AbstractMessageBus
 from src.core._shared.infrastructure.storage.abstract_storage_service import AbstractStorageService
+from src.core.video.application.events.integration_events import AudioVideoMediaUpdatedIntegrationEvent
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating
 from src.core.video.domain.video import Video
@@ -27,8 +29,9 @@ class TestUploadVideo:
         mock_repository = create_autospec(VideoRepository)
         mock_repository.get_by_id.return_value = video
         mock_storage = create_autospec(AbstractStorageService)
+        mock_message_bus = create_autospec(AbstractMessageBus)
 
-        use_case = UploadVideo(mock_repository, mock_storage)
+        use_case = UploadVideo(mock_repository, mock_storage, mock_message_bus)
         input_data = UploadVideo.Input(
             video_id=video.id,
             file_name='trailer.mp4',
@@ -45,6 +48,12 @@ class TestUploadVideo:
             content_type='video/mp4'
         )
         mock_repository.update.assert_called_once_with(video)
+        mock_message_bus.handle.assert_called_once_with([
+            AudioVideoMediaUpdatedIntegrationEvent(
+                resource_id=f'{video.id}.VIDEO',
+                file_path=f'videos/{video.id}/trailer.mp4',
+            )
+        ])
         assert video.video == AudioVideoMedia(
             name='trailer.mp4',
             raw_location=f'videos/{video.id}/trailer.mp4',
@@ -57,8 +66,9 @@ class TestUploadVideo:
         mock_repository = create_autospec(VideoRepository)
         mock_repository.get_by_id.return_value = None
         mock_storage = create_autospec(AbstractStorageService)
+        mock_message_bus = create_autospec(AbstractMessageBus)
 
-        use_case = UploadVideo(mock_repository, mock_storage)
+        use_case = UploadVideo(mock_repository, mock_storage, mock_message_bus)
 
         with pytest.raises(VideoNotFound, match=f'Video with id .* not found'):
             use_case.execute(
@@ -69,3 +79,7 @@ class TestUploadVideo:
                     content_type='video/mp4'
                 )
             )
+
+        mock_storage.store.assert_not_called()
+        mock_repository.update.assert_not_called()
+        mock_message_bus.handle.assert_not_called()

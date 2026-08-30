@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
 
+from src.core._shared.events.message_bus import MessageBus
 from src.core._shared.infrastructure.storage.local_storage import LocalStorage
 from src.core.video.application.exceptions import RelatedEntitiesNotFound, InvalidVideo, VideoNotFound
 from src.core.video.application.usecase.get_video import GetVideo
@@ -61,7 +62,11 @@ class VideoViewSet(viewsets.ViewSet):
         content = file.read()
         content_type = file.content_type
 
-        usecase = UploadVideo(video_repository=DjangoORMVideoRepository(), storage_service=LocalStorage())
+        usecase = UploadVideo(
+            video_repository=DjangoORMVideoRepository(),
+            storage_service=LocalStorage(),
+            message_bus=MessageBus(),
+        )
         try:
             usecase.execute(UploadVideo.Input(video_id=pk, file_name=file.name, content=content, content_type=content_type))
         except VideoNotFound:
