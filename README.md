@@ -107,6 +107,8 @@ src/
 - **Django REST Framework**
 - **pytest** (testes)
 - **SQLite** (banco de dados)
+- **RabbitMQ** (mensageria)
+- **Docker** (execução local do RabbitMQ)
 
 ## 📦 Instalação
 
@@ -132,13 +134,40 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-### 4. Execute as migrações
+### 4. Inicie o RabbitMQ com Docker
+
+Com o Docker instalado e em execução, crie o container do RabbitMQ:
+
+```bash
+docker run -d \
+  --hostname rabbitmq \
+  --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:3-management
+```
+
+A aplicação utiliza a porta `5672` para publicar mensagens. O painel de gerenciamento fica disponível em [http://localhost:15672](http://localhost:15672), com usuário e senha `guest`.
+
+Nas próximas execuções, inicie o container existente com:
+
+```bash
+docker start rabbitmq
+```
+
+Para interromper o RabbitMQ:
+
+```bash
+docker stop rabbitmq
+```
+
+### 5. Execute as migrações
 
 ```bash
 python manage.py migrate
 ```
 
-### 5. Inicie o servidor
+### 6. Inicie o servidor
 
 ```bash
 python manage.py runserver

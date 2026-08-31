@@ -3,3 +3,4 @@ django
 djangorestframework
 pytest-django
 django-extensions
+pika
