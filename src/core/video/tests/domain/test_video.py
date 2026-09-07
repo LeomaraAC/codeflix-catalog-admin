@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.core.video.domain.value_objects import Rating
+from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, MediaType, Rating
 from src.core.video.domain.video import Video
 
 
@@ -22,3 +22,151 @@ class TestVideo:
         with pytest.raises(ValueError, match='Duration cannot be negative'):
             Video(title='Title', description='', launch_year=2000, duration=Decimal(-1), published=True, rating=Rating.L,
                   categories=set(), genres=set(), cast_members=set())
+
+    def test_publish_completed_video_marks_as_published(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            video=AudioVideoMedia(
+                name='john-wick.mp4',
+                media_type=MediaType.VIDEO,
+                raw_location='videos/john-wick.mp4',
+                encoded_location='videos/john-wick-encoded.mp4',
+                status=MediaStatus.COMPLETED,
+            ),
+        )
+
+        video.publish()
+
+        assert video.published is True
+
+    def test_publish_without_video_raises_domain_error_after_marking_as_published(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+        )
+
+        with pytest.raises(ValueError, match='Video media is required to publish the video'):
+            video.publish()
+
+        assert video.published is False
+
+    def test_publish_with_unprocessed_video_raises_domain_error_after_marking_as_published(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            video=AudioVideoMedia(
+                name='john-wick.mp4',
+                media_type=MediaType.VIDEO,
+                raw_location='videos/john-wick.mp4',
+                encoded_location='',
+                status=MediaStatus.PROCESSING,
+            ),
+        )
+
+        with pytest.raises(ValueError, match='Video must be fully processed to be published'):
+            video.publish()
+
+        assert video.published is False
+
+    def test_process_completed_media_updates_video_and_publishes(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            video=AudioVideoMedia(
+                name='john-wick.mp4',
+                media_type=MediaType.VIDEO,
+                raw_location='videos/john-wick.mp4',
+                encoded_location='',
+                status=MediaStatus.PENDING,
+            ),
+        )
+
+        video.process(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
+
+        assert video.published is True
+        assert video.video == AudioVideoMedia(
+            name='john-wick.mp4',
+            media_type=MediaType.VIDEO,
+            raw_location='videos/john-wick.mp4',
+            encoded_location='videos/john-wick-encoded.mp4',
+            status=MediaStatus.COMPLETED,
+        )
+
+    def test_process_failed_media_marks_video_as_error_without_publishing(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            video=AudioVideoMedia(
+                name='john-wick.mp4',
+                media_type=MediaType.VIDEO,
+                raw_location='videos/john-wick.mp4',
+                encoded_location='videos/john-wick-encoded.mp4',
+                status=MediaStatus.PROCESSING,
+            ),
+        )
+
+        video.process(MediaStatus.ERROR, 'videos/ignored.mp4')
+
+        assert video.published is False
+        assert video.video == AudioVideoMedia(
+            name='john-wick.mp4',
+            media_type=MediaType.VIDEO,
+            raw_location='videos/john-wick.mp4',
+            encoded_location='',
+            status=MediaStatus.ERROR,
+        )
+
+    def test_process_without_video_raises_domain_error(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+        )
+
+        with pytest.raises(ValueError, match='Video media is required to process the video'):
+            video.process(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
+
+        assert video.published is False
+        assert video.video is None

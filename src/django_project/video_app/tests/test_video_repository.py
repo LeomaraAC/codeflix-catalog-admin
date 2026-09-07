@@ -6,7 +6,7 @@ import pytest
 from src.core.cast_member.domain.cast_member import CastMember, CastMemberType
 from src.core.category.domain.category import Category
 from src.core.genre.domain.genre import Genre
-from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating
+from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, MediaType, Rating
 from src.core.video.domain.video import Video
 from src.django_project.cast_member_app.repository import DjangoORMCastMemberRepository
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
@@ -172,6 +172,7 @@ class TestUpdate:
             cast_members={cast_member_director.id},
             video=AudioVideoMedia(
                 name='john-wick-4.mp4',
+                media_type=MediaType.VIDEO,
                 raw_location='videos/john-wick-4.mp4',
                 encoded_location='videos/john-wick-4-encoded.mp4',
                 status=MediaStatus.COMPLETED,
@@ -193,6 +194,7 @@ class TestUpdate:
         assert {item.id for item in updated_video.cast_members.all()} == {cast_member_director.id}
         assert updated_video.video is not None
         assert updated_video.video.name == video_to_update.video.name
+        assert updated_video.video.media_type == video_to_update.video.media_type.value
         assert updated_video.video.raw_location == video_to_update.video.raw_location
         assert updated_video.video.encoded_location == video_to_update.video.encoded_location
         assert updated_video.video.status == video_to_update.video.status.name
@@ -210,6 +212,7 @@ class TestUpdate:
             cast_members=set(),
             video=AudioVideoMedia(
                 name='john-wick.mp4',
+                media_type=MediaType.VIDEO,
                 raw_location='videos/john-wick.mp4',
                 encoded_location='',
                 status=MediaStatus.PENDING,
@@ -224,6 +227,7 @@ class TestUpdate:
         video.update_video(
             AudioVideoMedia(
                 name='john-wick-new.mp4',
+                media_type=MediaType.VIDEO,
                 raw_location='videos/john-wick-new.mp4',
                 encoded_location='',
                 status=MediaStatus.PENDING,
@@ -265,6 +269,7 @@ class TestUpdate:
             cast_members=set(),
             video=AudioVideoMedia(
                 name='nonexistent.mp4',
+                media_type=MediaType.VIDEO,
                 raw_location='videos/nonexistent.mp4',
                 encoded_location='',
                 status=MediaStatus.PENDING,

@@ -1,6 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum, unique, Enum, auto
-from uuid import UUID
 
 
 @unique
@@ -28,9 +27,24 @@ class ImageMedia:
 @dataclass(frozen=True)
 class AudioVideoMedia:
     name: str
+    media_type: "MediaType"
     raw_location: str
     encoded_location: str
     status: MediaStatus
+
+    def complete(self, encoded_location: str) -> "AudioVideoMedia":
+        return replace(
+            self,
+            encoded_location=encoded_location,
+            status=MediaStatus.COMPLETED,
+        )
+
+    def fail(self) -> "AudioVideoMedia":
+        return replace(
+            self,
+            encoded_location="",
+            status=MediaStatus.ERROR,
+        )
 
 @unique
 class MediaType(StrEnum):

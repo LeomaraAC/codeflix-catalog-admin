@@ -8,7 +8,7 @@ from src.core._shared.infrastructure.storage.abstract_storage_service import Abs
 from src.core.video.application.events.integration_events import AudioVideoMediaUpdatedIntegrationEvent
 from src.core.video.application.exceptions import VideoNotFound
 from src.core.video.application.usecase.upload_video import UploadVideo
-from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, Rating
+from src.core.video.domain.value_objects import AudioVideoMedia, MediaStatus, MediaType, Rating
 from src.core.video.domain.video import Video
 from src.core.video.infra.in_memory_video_repository import InMemoryVideoRepository
 
@@ -55,6 +55,7 @@ class TestUploadVideo:
 
         assert video.video == AudioVideoMedia(
             name='trailer.mp4',
+            media_type=MediaType.VIDEO,
             raw_location=f'videos/{video.id}/trailer.mp4',
             encoded_location='',
             status=MediaStatus.PENDING

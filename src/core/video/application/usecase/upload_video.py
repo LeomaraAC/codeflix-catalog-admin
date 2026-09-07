@@ -39,6 +39,7 @@ class UploadVideo:
 
         audio_video_media = AudioVideoMedia(
             name=input.file_name,
+            media_type=MediaType.VIDEO,
             raw_location=str(file_path),
             encoded_location="",
             status=MediaStatus.PENDING

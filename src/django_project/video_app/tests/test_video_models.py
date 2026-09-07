@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 from django.db import models
 
-from src.core.video.domain.value_objects import Rating
+from src.core.video.domain.value_objects import MediaType, Rating
 from src.django_project.video_app.models import AudioVideoMedia, ImageMedia, Video
 
 
@@ -48,13 +48,13 @@ def test_media_relationship_configuration(field_name, related_model, related_nam
             "trailer",
             AudioVideoMedia,
             "video_trailer",
-            {"name": "trailer.mp4", "raw_location": "videos/trailer.mp4"},
+            {"name": "trailer.mp4", "media_type": MediaType.TRAILER.value, "raw_location": "videos/trailer.mp4"},
         ),
         (
             "video",
             AudioVideoMedia,
             "video_media",
-            {"name": "video.mp4", "raw_location": "videos/video.mp4"},
+            {"name": "video.mp4", "media_type": MediaType.VIDEO.value, "raw_location": "videos/video.mp4"},
         ),
     ],
 )

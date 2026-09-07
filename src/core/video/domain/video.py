@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from src.core._shared.domain.entity import Entity
-from src.core.video.domain.value_objects import Rating, ImageMedia, AudioVideoMedia
+from src.core.video.domain.value_objects import MediaStatus, Rating, ImageMedia, AudioVideoMedia
 
 
 @dataclass
@@ -81,4 +81,27 @@ class Video(Entity):
 
     def update_banner(self, banner: ImageMedia):
         self.banner = banner
+        self.validate()
+
+    def publish(self) -> None:
+        if not self.video:
+            self.notification.add_error("Video media is required to publish the video")
+        elif self.video.status != MediaStatus.COMPLETED:
+            self.notification.add_error("Video must be fully processed to be published")
+
+        self.validate()
+
+        self.published = True
+        self.validate()
+
+    def process(self, status: MediaStatus, encoded_location: str):
+        if not self.video:
+            self.notification.add_error("Video media is required to process the video")
+            self.validate()
+        
+        if status == MediaStatus.COMPLETED:
+            self.video = self.video.complete(encoded_location)
+            self.publish()
+        else:
+            self.video = self.video.fail()
         self.validate()

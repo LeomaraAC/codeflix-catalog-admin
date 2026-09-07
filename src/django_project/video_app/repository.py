@@ -42,6 +42,7 @@ class DjangoORMVideoRepository(VideoRepository):
 
                 video_model.video = AudioVideoMediaORM.objects.create(
                     name=video.video.name,
+                    media_type=video.video.media_type.value,
                     raw_location=video.video.raw_location,
                     encoded_location=video.video.encoded_location,
                     status=video.video.status.name,
