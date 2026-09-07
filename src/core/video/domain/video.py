@@ -94,7 +94,7 @@ class Video(Entity):
         self.published = True
         self.validate()
 
-    def process(self, status: MediaStatus, encoded_location: str):
+    def process_video(self, status: MediaStatus, encoded_location: str):
         if not self.video:
             self.notification.add_error("Video media is required to process the video")
             self.validate()
@@ -104,4 +104,15 @@ class Video(Entity):
             self.publish()
         else:
             self.video = self.video.fail()
+        self.validate()
+
+    def process_trailer(self, status: MediaStatus, encoded_location: str):
+        if not self.trailer:
+            self.notification.add_error("Trailer media is required to process the trailer")
+            self.validate()
+
+        if status == MediaStatus.COMPLETED:
+            self.trailer = self.trailer.complete(encoded_location)
+        else:
+            self.trailer = self.trailer.fail()
         self.validate()

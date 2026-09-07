@@ -90,7 +90,7 @@ class TestVideo:
 
         assert video.published is False
 
-    def test_process_completed_media_updates_video_and_publishes(self):
+    def test_process_video_completed_media_updates_video_and_publishes(self):
         video = Video(
             title='John Wick',
             description='Action movie',
@@ -110,7 +110,7 @@ class TestVideo:
             ),
         )
 
-        video.process(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
+        video.process_video(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
 
         assert video.published is True
         assert video.video == AudioVideoMedia(
@@ -121,7 +121,7 @@ class TestVideo:
             status=MediaStatus.COMPLETED,
         )
 
-    def test_process_failed_media_marks_video_as_error_without_publishing(self):
+    def test_process_video_failed_media_marks_video_as_error_without_publishing(self):
         video = Video(
             title='John Wick',
             description='Action movie',
@@ -141,7 +141,7 @@ class TestVideo:
             ),
         )
 
-        video.process(MediaStatus.ERROR, 'videos/ignored.mp4')
+        video.process_video(MediaStatus.ERROR, 'videos/ignored.mp4')
 
         assert video.published is False
         assert video.video == AudioVideoMedia(
@@ -152,7 +152,7 @@ class TestVideo:
             status=MediaStatus.ERROR,
         )
 
-    def test_process_without_video_raises_domain_error(self):
+    def test_process_video_without_video_raises_domain_error(self):
         video = Video(
             title='John Wick',
             description='Action movie',
@@ -166,7 +166,88 @@ class TestVideo:
         )
 
         with pytest.raises(ValueError, match='Video media is required to process the video'):
-            video.process(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
+            video.process_video(MediaStatus.COMPLETED, 'videos/john-wick-encoded.mp4')
 
         assert video.published is False
         assert video.video is None
+
+    def test_process_trailer_completed_media_updates_trailer_without_publishing(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            trailer=AudioVideoMedia(
+                name='john-wick-trailer.mp4',
+                media_type=MediaType.TRAILER,
+                raw_location='videos/john-wick-trailer.mp4',
+                encoded_location='',
+                status=MediaStatus.PENDING,
+            ),
+        )
+
+        video.process_trailer(MediaStatus.COMPLETED, 'videos/john-wick-trailer-encoded.mp4')
+
+        assert video.published is False
+        assert video.trailer == AudioVideoMedia(
+            name='john-wick-trailer.mp4',
+            media_type=MediaType.TRAILER,
+            raw_location='videos/john-wick-trailer.mp4',
+            encoded_location='videos/john-wick-trailer-encoded.mp4',
+            status=MediaStatus.COMPLETED,
+        )
+
+    def test_process_trailer_failed_media_marks_trailer_as_error(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+            trailer=AudioVideoMedia(
+                name='john-wick-trailer.mp4',
+                media_type=MediaType.TRAILER,
+                raw_location='videos/john-wick-trailer.mp4',
+                encoded_location='videos/john-wick-trailer-encoded.mp4',
+                status=MediaStatus.PROCESSING,
+            ),
+        )
+
+        video.process_trailer(MediaStatus.ERROR, 'videos/ignored.mp4')
+
+        assert video.published is False
+        assert video.trailer == AudioVideoMedia(
+            name='john-wick-trailer.mp4',
+            media_type=MediaType.TRAILER,
+            raw_location='videos/john-wick-trailer.mp4',
+            encoded_location='',
+            status=MediaStatus.ERROR,
+        )
+
+    def test_process_trailer_without_trailer_raises_domain_error(self):
+        video = Video(
+            title='John Wick',
+            description='Action movie',
+            launch_year=2014,
+            duration=Decimal('120.50'),
+            published=False,
+            rating=Rating.AGE_16,
+            categories=set(),
+            genres=set(),
+            cast_members=set(),
+        )
+
+        with pytest.raises(ValueError, match='Trailer media is required to process the trailer'):
+            video.process_trailer(MediaStatus.COMPLETED, 'videos/john-wick-trailer-encoded.mp4')
+
+        assert video.published is False
+        assert video.trailer is None
