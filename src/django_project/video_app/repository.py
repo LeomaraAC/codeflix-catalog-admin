@@ -2,9 +2,10 @@ from django.db import transaction
 from uuid import UUID
 
 from src.core.video.domain.video import Video
-from src.core.video.domain.value_objects import Rating
+from src.core.video.domain.value_objects import MediaStatus, Rating
 from src.core.video.domain.video_repository import VideoRepository
 from .models import Video as VideoORM, AudioVideoMedia as AudioVideoMediaORM
+from src.core.video.domain.value_objects import AudioVideoMedia, MediaType
 
 
 class DjangoORMVideoRepository(VideoRepository):
@@ -65,19 +66,28 @@ class DjangoORMVideoRepository(VideoRepository):
 
 class VideoModelMapper:
     @staticmethod
-    def to_entity(video: VideoORM) -> Video:
-        return Video(
-            id=video.id,
-            title=video.title,
-            description=video.description,
-            launch_year=video.launch_year,
-            duration=video.duration,
-            published=video.published,
-            rating=Rating[video.rating],
-            categories={cat.id for cat in video.categories.all()},
-            genres={gen.id for gen in video.genres.all()},
-            cast_members={cast.id for cast in video.cast_members.all()},
+    def to_entity(model: VideoORM) -> Video:
+        video = Video(
+            id=model.id,
+            title=model.title,
+            description=model.description,
+            launch_year=model.launch_year,
+            duration=model.duration,
+            published=model.published,
+            rating=Rating[model.rating],
+            categories={cat.id for cat in model.categories.all()},
+            genres={gen.id for gen in model.genres.all()},
+            cast_members={cast.id for cast in model.cast_members.all()},
         )
+        if model.video:
+            video.video = AudioVideoMedia(
+                name=model.video.name,
+                media_type=MediaType(model.video.media_type),
+                raw_location=model.video.raw_location,
+                encoded_location=model.video.encoded_location,
+                status=MediaStatus[model.video.status],
+            )
+        return video
 
     @staticmethod
     def to_model_orm(video: Video) -> VideoORM:
