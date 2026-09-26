@@ -3,11 +3,11 @@ from enum import StrEnum, unique, Enum, auto
 
 
 @unique
-class MediaStatus(Enum):
-    PENDING = auto()
-    PROCESSING = auto()
-    COMPLETED = auto()
-    ERROR = auto()
+class MediaStatus(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
 
 @unique
 class Rating(Enum):
