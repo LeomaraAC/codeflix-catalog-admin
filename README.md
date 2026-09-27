@@ -51,9 +51,12 @@ src/
 │   │   │   └── usecase/
 │   │   │       ├── create_video_without_media.py
 │   │   │       ├── get_video.py
-│   │   │       └── list_video.py
+│   │   │       ├── list_video.py
+│   │   │       ├── upload_video.py
+│   │   │       └── process_audio_video_media.py
 │   │   ├── infra/                 # Implementações de infraestrutura
-│   │   │   └── in_memory_video_repository.py
+│   │   │   ├── in_memory_video_repository.py
+│   │   │   └── video_converted_rabbitmq_consumer.py
 │   │   └── tests/                 # Testes unitários e de integração
 │   │
 │   └── cast_member/
@@ -93,6 +96,8 @@ src/
     │   └── tests/                 # Testes de integração Django
     │
     └── video_app/
+      ├── management/commands/
+      │   └── start_consumer.py    # Consumo de eventos de conversão
       ├── models.py              # Model Django
       ├── repository.py          # Implementação do repositório com ORM
       ├── views.py               # ViewSet da API REST
@@ -102,12 +107,13 @@ src/
 
 ## 🚀 Tecnologias
 
-- **Python 3.x**
+- **Python 3.12+** (ambiente validado com Python 3.13)
 - **Django 6.0**
 - **Django REST Framework**
 - **pytest** (testes)
 - **SQLite** (banco de dados)
 - **RabbitMQ** (mensageria)
+- **Pika** (cliente Python para RabbitMQ)
 - **Docker** (execução local do RabbitMQ)
 
 ## 📦 Instalação
@@ -121,6 +127,8 @@ cd codeflix-catalog-admin
 
 ### 2. Crie e ative o ambiente virtual
 
+Utilize Python 3.12 ou superior para o Django 6.0.
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
@@ -131,8 +139,10 @@ venv\Scripts\activate     # Windows
 ### 3. Instale as dependências
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
+
+O arquivo inclui as dependências da aplicação e dos testes, incluindo `pika`, `pytest` e `pytest-django`.
 
 ### 4. Inicie o RabbitMQ com Docker
 
@@ -173,6 +183,18 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+### 7. Inicie o consumidor de eventos
+
+Para processar os eventos de conversão durante o uso da aplicação, execute em outro terminal, com o ambiente virtual ativo:
+
+```bash
+python manage.py start_consumer
+```
+
+O consumidor escuta a fila `videos.converted` no RabbitMQ em `localhost:5672` e permanece em execução até ser interrompido com `Ctrl+C`.
+
+O upload armazena a mídia com status `PENDING` e publica um evento em `videos.new`. Um serviço externo deve converter o arquivo e publicar o resultado em `videos.converted`; este projeto trata esse resultado, mas não executa a conversão. Um evento com status `COMPLETED` atualiza o caminho da mídia convertida e publica o vídeo no catálogo.
+
 ## 🔌 API Endpoints
 
 ### Categories (`/api/categories/`)
@@ -211,6 +233,7 @@ python manage.py runserver
 | `GET` | `/api/videos/` | Lista todos os vídeos |
 | `GET` | `/api/videos/{id}/` | Obtém um vídeo específico |
 | `POST` | `/api/videos/` | Cria um novo vídeo |
+| `PATCH` | `/api/videos/{id}/` | Envia a mídia pelo campo `video_file` em multipart |
 
 ### Exemplos de Requisição
 
@@ -258,6 +281,15 @@ curl -X POST http://localhost:8000/api/videos/ \
 }
 ```
 
+**Enviar a mídia de um vídeo existente:**
+
+```bash
+curl -X PATCH 'http://localhost:8000/api/videos/<video-uuid>/' \
+  -F 'video_file=@/caminho/para/video.mp4'
+```
+
+O armazenamento local padrão é `/tmp/codeflix-storage/videos/<video-uuid>/`.
+
 ## 🧪 Testes
 
 O projeto possui uma suíte completa de testes:
@@ -268,9 +300,23 @@ O projeto possui uma suíte completa de testes:
 
 ### Executar todos os testes
 
+Execute os comandos na raiz do projeto, com o ambiente virtual ativo e o RabbitMQ disponível em `localhost:5672`.
+
+Antes de executar os testes E2E, interrompa com `Ctrl+C` qualquer `start_consumer` iniciado para uso manual. O teste de processamento inicia seu próprio consumidor na mesma fila; outro consumidor pode receber a mensagem destinada ao teste e tentar processá-la no banco da aplicação.
+
 ```bash
 pytest
 ```
+
+### Teste end-to-end de processamento de vídeo
+
+```bash
+pytest src/tests_e2e/test_user_can_process_uploaded_video.py -v
+```
+
+Esse teste cria categoria, gênero, membro de elenco e vídeo pelas APIs, envia a mídia e publica um evento real em `videos.converted`. Em seguida, executa `call_command('start_consumer')` no mesmo processo para compartilhar o banco de testes e a transação do pytest. Ao final, verifica o status `COMPLETED` e os caminhos da mídia.
+
+O teste simula o evento de conclusão da conversão, portanto precisa apenas do RabbitMQ, sem um serviço de conversão externo. A fixture `bounded_consumer` agenda `stop_consuming()` após 1 segundo e fecha a conexão ao encerrar, mantendo a conexão e o processamento reais do Pika. Esse controle existe apenas no teste. O banco de testes e o diretório temporário de upload são gerenciados pelo pytest; não é necessário iniciar o servidor HTTP ou o consumidor em outro terminal.
 
 ### Executar testes específicos
 
@@ -422,6 +468,12 @@ Obtém os detalhes de um vídeo pelo ID.
 
 #### ListVideo
 Lista os vídeos cadastrados com suporte a ordenação e paginação.
+
+#### UploadVideo
+Armazena a mídia, associa-a ao vídeo com status `PENDING` e publica o evento de upload na fila `videos.new`.
+
+#### ProcessAudioVideoMedia
+Processa o resultado da conversão recebido em `videos.converted`. Quando o status é `COMPLETED`, atualiza a localização da mídia convertida; para a mídia principal, também publica o vídeo.
 
 ## 📝 Entidades
 
