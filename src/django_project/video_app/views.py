@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from rest_framework import viewsets
+from src.django_project.permissions import IsAuthenticated, IsAdmin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
@@ -20,6 +21,7 @@ from src.django_project.video_app.repository import DjangoORMVideoRepository
 from src.django_project.category_app.repository import DjangoORMCategoryRepository
 
 class VideoViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated & IsAdmin]
 
     def list(self, request: Request) -> Response:
         order_by = request.query_params.get('order_by', 'title')

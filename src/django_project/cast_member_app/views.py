@@ -14,9 +14,12 @@ from src.django_project.cast_member_app.repository import DjangoORMCastMemberRep
 from src.django_project.cast_member_app.serializers import CreateCastMemberInputSerializer, \
     CreateCastMemberOutputSerializer, ListCastMemberOutputSerializer, UpdateCastMemberInputSerializer, \
     DeleteCastMemberInputSerializer
+from src.django_project.permissions import IsAuthenticated, IsAdmin
 
 
 class CastMemberViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated & IsAdmin]
+    
     def create(self, request: Request) -> Response:
         serializer = CreateCastMemberInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
