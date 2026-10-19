@@ -16,13 +16,8 @@ from src.django_project.video_app.repository import DjangoORMVideoRepository
 
 
 @pytest.fixture
-def category_movie() -> Category:
-    return Category(name='Movie', description='Movie category')
-
-
-@pytest.fixture
-def category_repository(category_movie: Category) -> DjangoORMCategoryRepository:
-    repository = DjangoORMCategoryRepository()
+def category_repository(category_repository: DjangoORMCategoryRepository, category_movie: Category) -> DjangoORMCategoryRepository:
+    repository = category_repository
     repository.save(category_movie)
     return repository
 
@@ -33,8 +28,8 @@ def genre_action(category_movie: Category, category_repository: DjangoORMCategor
 
 
 @pytest.fixture
-def genre_repository(genre_action: Genre) -> DjangoORMGenreRepository:
-    repository = DjangoORMGenreRepository()
+def genre_repository(genre_repository: DjangoORMGenreRepository, genre_action: Genre) -> DjangoORMGenreRepository:
+    repository = genre_repository
     repository.save(genre_action)
     return repository
 
@@ -45,8 +40,8 @@ def cast_member_keanu() -> CastMember:
 
 
 @pytest.fixture
-def cast_member_repository(cast_member_keanu: CastMember) -> DjangoORMCastMemberRepository:
-    repository = DjangoORMCastMemberRepository()
+def cast_member_repository(cast_member_repository: DjangoORMCastMemberRepository, cast_member_keanu: CastMember) -> DjangoORMCastMemberRepository:
+    repository = cast_member_repository
     repository.save(cast_member_keanu)
     return repository
 

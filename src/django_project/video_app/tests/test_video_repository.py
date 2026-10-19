@@ -16,21 +16,6 @@ from src.django_project.video_app.models import Video as VideoORM
 from src.django_project.video_app.repository import DjangoORMVideoRepository
 
 
-@pytest.fixture
-def category_repository() -> DjangoORMCategoryRepository:
-    return DjangoORMCategoryRepository()
-
-
-@pytest.fixture
-def genre_repository() -> DjangoORMGenreRepository:
-    return DjangoORMGenreRepository()
-
-
-@pytest.fixture
-def cast_member_repository() -> DjangoORMCastMemberRepository:
-    return DjangoORMCastMemberRepository()
-
-
 @pytest.mark.django_db
 class TestSave:
     def test_can_save_video_with_related_entities(

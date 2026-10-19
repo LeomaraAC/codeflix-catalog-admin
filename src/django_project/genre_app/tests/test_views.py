@@ -11,18 +11,13 @@ from src.django_project.genre_app.repository import DjangoORMGenreRepository
 
 
 @pytest.fixture
-def category_movie():
-    return Category(name='Movie', description='All about movies')
-
-
-@pytest.fixture
 def category_documentary():
     return Category(name='Documentary', description='All about documentaries')
 
 
 @pytest.fixture
-def category_repository(category_movie, category_documentary) -> DjangoORMCategoryRepository:
-    repo = DjangoORMCategoryRepository()
+def category_repository(category_repository: DjangoORMCategoryRepository, category_movie, category_documentary) -> DjangoORMCategoryRepository:
+    repo = category_repository
     repo.save(category_movie)
     repo.save(category_documentary)
     return repo
@@ -36,11 +31,6 @@ def genre_romance(category_movie, category_documentary) -> Genre:
 @pytest.fixture
 def genre_drama() -> Genre:
     return Genre(name='Drama', is_active=True)
-
-
-@pytest.fixture
-def genre_repository() -> DjangoORMGenreRepository:
-    return DjangoORMGenreRepository()
 
 
 @pytest.mark.django_db

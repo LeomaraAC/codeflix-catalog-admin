@@ -9,60 +9,46 @@ from src.django_project.cast_member_app.repository import DjangoORMCastMemberRep
 
 
 @pytest.fixture
-def repository() -> DjangoORMCastMemberRepository:
-    return DjangoORMCastMemberRepository()
-
-
-@pytest.fixture
-def jane() -> CastMember:
-    return CastMember(name='Jane Smith', type=CastMemberType.ACTOR)
-
-
-@pytest.fixture
-def john() -> CastMember:
-    return CastMember(name='John Doe', type=CastMemberType.DIRECTOR)
-
-@pytest.fixture
 def samantha() -> CastMember:
     return CastMember(name='Samantha', type=CastMemberType.ACTOR)
 
 
 @pytest.mark.django_db
 class TestCreateCastMemberAPI:
-    def test_when_payload_is_valid_than_return_201(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_when_payload_is_valid_than_return_201(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': 'John Smith', 'type': 'ACTOR'}
         response = authenticated_client.post('/api/cast_members/', data=payload, format='json')
 
         assert response.status_code == HTTP_201_CREATED
         assert 'id' in response.data
 
-        cast_member_created = repository.get_by_id(response.data['id'])
+        cast_member_created = cast_member_repository.get_by_id(response.data['id'])
         assert cast_member_created is not None
         assert cast_member_created.name == payload['name']
         assert cast_member_created.type == payload['type']
 
-    def test_when_name_is_empty_than_return_400(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_when_name_is_empty_than_return_400(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': '', 'type': 'ACTOR'}
         response = authenticated_client.post('/api/cast_members/', data=payload, format='json')
 
         assert response.status_code == 400
         assert 'name' in response.data
 
-    def test_when_name_is_invalid_than_return_400(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_when_name_is_invalid_than_return_400(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': 'a' * 256, 'type': 'ACTOR'}
         response = authenticated_client.post('/api/cast_members/', data=payload, format='json')
 
         assert response.status_code == 400
         assert 'name' in response.data
 
-    def test_when_type_is_invalid_than_return_400(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_when_type_is_invalid_than_return_400(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': 'Jane Doe', 'type': 'SCREENWRITER'}
         response = authenticated_client.post('/api/cast_members/', data=payload, format='json')
 
         assert response.status_code == 400
         assert 'type' in response.data
 
-    def test_payload_without_type_than_return_400(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_payload_without_type_than_return_400(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': 'Jane Doe'}
         response = authenticated_client.post('/api/cast_members/', data=payload, format='json')
 
@@ -72,21 +58,21 @@ class TestCreateCastMemberAPI:
 
 @pytest.mark.django_db
 class TestUpdateCastMemberAPI:
-    def test_when_payload_is_valid_then_update_cast_member(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember):
-        repository.save(jane)
+    def test_when_payload_is_valid_then_update_cast_member(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember):
+        cast_member_repository.save(jane)
 
         payload = {'name': 'Jane Doe', 'type': 'DIRECTOR'}
         response = authenticated_client.put(f'/api/cast_members/{jane.id}/', data=payload, format='json')
 
         assert response.status_code == HTTP_204_NO_CONTENT
 
-        updated_cast_member = repository.get_by_id(jane.id)
+        updated_cast_member = cast_member_repository.get_by_id(jane.id)
         assert updated_cast_member is not None
         assert updated_cast_member.name == payload['name']
         assert updated_cast_member.type == payload['type']
 
-    def test_when_payload_is_invalid_then_return_400(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember):
-        repository.save(jane)
+    def test_when_payload_is_invalid_then_return_400(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember):
+        cast_member_repository.save(jane)
 
         payload = {'name': '', 'type': 'DIRECTOR'}
         response = authenticated_client.put(f'/api/cast_members/{jane.id}/', data=payload, format='json')
@@ -100,7 +86,7 @@ class TestUpdateCastMemberAPI:
         assert response.status_code == 400
         assert 'type' in response.data
 
-    def test_when_cast_member_does_not_exist_then_return_404(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_when_cast_member_does_not_exist_then_return_404(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         payload = {'name': 'Jane', 'type': 'DIRECTOR'}
         response = authenticated_client.put(f'/api/cast_members/{str(uuid.uuid4())}/', data=payload, format='json')
 
@@ -109,17 +95,17 @@ class TestUpdateCastMemberAPI:
 
 @pytest.mark.django_db
 class TestDeleteCastMemberAPI:
-    def test_delete_cast_member(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember):
-        repository.save(jane)
-        repository.save(john)
+    def test_delete_cast_member(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember):
+        cast_member_repository.save(jane)
+        cast_member_repository.save(john)
 
         response = authenticated_client.delete(f'/api/cast_members/{jane.id}/')
         assert response.status_code == HTTP_204_NO_CONTENT
-        assert repository.get_by_id(jane.id) is None
-        assert repository.get_by_id(john.id) is not None
+        assert cast_member_repository.get_by_id(jane.id) is None
+        assert cast_member_repository.get_by_id(john.id) is not None
 
-    def test_when_cast_member_does_not_exist_then_return_404(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember):
-        repository.save(jane)
+    def test_when_cast_member_does_not_exist_then_return_404(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember):
+        cast_member_repository.save(jane)
 
         response = authenticated_client.delete(f'/api/cast_members/{str(uuid.uuid4())}/')
         assert response.status_code == HTTP_404_NOT_FOUND
@@ -127,9 +113,9 @@ class TestDeleteCastMemberAPI:
 
 @pytest.mark.django_db
 class TestListCastMemberAPI:
-    def test_list_cast_members(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember):
-        repository.save(jane)
-        repository.save(john)
+    def test_list_cast_members(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember):
+        cast_member_repository.save(jane)
+        cast_member_repository.save(john)
 
         response = authenticated_client.get('/api/cast_members/')
 
@@ -149,16 +135,16 @@ class TestListCastMemberAPI:
 
         assert response.data['meta'] == {'current_page': 1, 'per_page': 2, 'total': 2}
 
-    def test_list_empty_cast_members(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository):
+    def test_list_empty_cast_members(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository):
         response = authenticated_client.get('/api/cast_members/')
         assert response.status_code == HTTP_200_OK
         assert len(response.data['data']) == 0
         assert response.data['meta'] == {'current_page': 1, 'per_page': 2, 'total': 0}
 
-    def test_list_sorted_by_type_and_paginated(self, authenticated_client: APIClient, repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember, samantha: CastMember):
-        repository.save(john)
-        repository.save(jane)
-        repository.save(samantha)
+    def test_list_sorted_by_type_and_paginated(self, authenticated_client: APIClient, cast_member_repository: DjangoORMCastMemberRepository, jane: CastMember, john: CastMember, samantha: CastMember):
+        cast_member_repository.save(john)
+        cast_member_repository.save(jane)
+        cast_member_repository.save(samantha)
 
         response = authenticated_client.get('/api/cast_members/?order_by=type&current_page=2')
 

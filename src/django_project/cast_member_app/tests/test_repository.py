@@ -6,14 +6,6 @@ from src.django_project.cast_member_app.models import CastMember as CastMemberOR
 from src.core.cast_member.domain.cast_member import CastMember, CastMemberType
 from src.django_project.cast_member_app.repository import DjangoORMCastMemberRepository
 
-@pytest.fixture
-def john():
-    return CastMember(name='John Doe', type=CastMemberType.ACTOR)
-
-@pytest.fixture
-def jane():
-    return CastMember(name='Jane Smith', type=CastMemberType.ACTOR)
-
 @pytest.mark.django_db
 class TestSave:
     def test_can_save_cast_member_in_database(self, john: CastMember):
