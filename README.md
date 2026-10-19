@@ -12,6 +12,8 @@ O projeto segue a **Clean Architecture**, separando as responsabilidades em cama
 
 ```
 src/
+├── conftest.py                    # Fixtures pytest compartilhadas, incluindo autenticação
+├── tests_e2e/                     # Fluxos completos pela API
 ├── core/                          # Núcleo da aplicação (independente de framework)
 │   ├── category/
 │   │   ├── domain/                # Entidades e contratos do domínio
@@ -114,6 +116,8 @@ src/
 - **SQLite** (banco de dados)
 - **RabbitMQ** (mensageria)
 - **Pika** (cliente Python para RabbitMQ)
+- **PyJWT + cryptography** (assinatura e validação de JWT com RSA/RS256)
+- **python-dotenv** (carregamento de configuração do arquivo `.env`)
 - **Docker** (execução local do RabbitMQ)
 
 ## 📦 Instalação
@@ -195,6 +199,24 @@ O consumidor escuta a fila `videos.converted` no RabbitMQ em `localhost:5672` e 
 
 O upload armazena a mídia com status `PENDING` e publica um evento em `videos.new`. Um serviço externo deve converter o arquivo e publicar o resultado em `videos.converted`; este projeto trata esse resultado, mas não executa a conversão. Um evento com status `COMPLETED` atualiza o caminho da mídia convertida e publica o vídeo no catálogo.
 
+## 🔐 Autenticação
+
+Para executar a API, configure `AUTH_PUBLIC_KEY` no ambiente ou em um arquivo `.env` na raiz do projeto:
+
+```dotenv
+AUTH_PUBLIC_KEY="<conteúdo Base64 da chave pública RSA do emissor>"
+```
+
+Substitua o placeholder pelo conteúdo da chave pública, sem os delimitadores `-----BEGIN PUBLIC KEY-----` e `-----END PUBLIC KEY-----`: o `JwtAuthService` já os adiciona. A chave deve corresponder à chave privada usada pelo emissor para assinar o token; a API precisa somente da chave pública.
+
+Envie o token no cabeçalho `Authorization: Bearer <token>`. A implementação valida a assinatura com `RS256`, espera `aud` igual a `account` e verifica se `realm_access.roles` contém `admin`. Tokens com `exp` vencido são rejeitados.
+
+Para os exemplos abaixo, defina `TOKEN` no terminal com um token emitido para um usuário administrador:
+
+```bash
+export TOKEN='<token JWT válido>'
+```
+
 ## 🔌 API Endpoints
 
 ### Categories (`/api/categories/`)
@@ -240,6 +262,7 @@ O upload armazena a mídia com status `PENDING` e publica um evento em `videos.n
 **Criar categoria:**
 ```bash
 curl -X POST http://localhost:8000/api/categories/ \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Filmes", "description": "Categoria de filmes", "is_active": true}'
 ```
@@ -247,6 +270,7 @@ curl -X POST http://localhost:8000/api/categories/ \
 **Criar gênero:**
 ```bash
 curl -X POST http://localhost:8000/api/genres/ \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Ação", "is_active": true, "category_ids": ["<category-uuid>"]}'
 ```
@@ -254,6 +278,7 @@ curl -X POST http://localhost:8000/api/genres/ \
 **Criar membro de elenco:**
 ```bash
 curl -X POST http://localhost:8000/api/cast_members/ \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Robert Downey Jr.", "type": "ACTOR"}'
 ```
@@ -261,6 +286,7 @@ curl -X POST http://localhost:8000/api/cast_members/ \
 **Criar vídeo:**
 ```bash
 curl -X POST http://localhost:8000/api/videos/ \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "John Wick",
@@ -285,6 +311,7 @@ curl -X POST http://localhost:8000/api/videos/ \
 
 ```bash
 curl -X PATCH 'http://localhost:8000/api/videos/<video-uuid>/' \
+  -H "Authorization: Bearer $TOKEN" \
   -F 'video_file=@/caminho/para/video.mp4'
 ```
 
@@ -297,6 +324,17 @@ O projeto possui uma suíte completa de testes:
 - **Testes Unitários**: Testam componentes isolados (domínio, casos de uso)
 - **Testes de Integração**: Testam a integração entre camadas
 - **Testes E2E**: Testam fluxos completos da aplicação
+
+### Autenticação nos testes
+
+As fixtures ficam em [`src/conftest.py`](src/conftest.py), um arquivo descoberto automaticamente pelo **pytest**. Por estar no diretório ancestral de `django_project/` e `tests_e2e/`, ele disponibiliza as fixtures para ambas as suítes, sem imports nos testes.
+
+- `rsa_key_pair`: gera um par RSA de 2048 bits em memória, uma vez por sessão de testes (`scope="session"`).
+- `token_factory`: configura temporariamente `AUTH_PUBLIC_KEY` com `monkeypatch` e fornece uma função que assina tokens RS256 com a chave privada de teste, audience `account`, papel `admin` e validade de cinco minutos.
+- `authenticated_client`: cria um `APIClient` com o cabeçalho `Authorization: Bearer <token>` configurado.
+
+O authenticated_client e a token_factory são preparados por teste; o `monkeypatch` restaura a variável de ambiente ao final. Não é necessário obter tokens de um provedor externo ou configurar uma chave real para esses testes.
+
 
 ### Executar todos os testes
 
@@ -372,43 +410,21 @@ pytest src/tests_e2e/
 
 ## 📂 Estrutura de Testes
 
-```
-tests/
-├── category/
-│   ├── domain/                        # Testes da entidade Category
-│   ├── application/usecase/
-│   │   ├── unit/                      # Testes unitários (mock do repositório)
-│   │   └── integration/               # Testes de integração (repositório real)
-│   └── infra/                         # Testes do repositório in-memory
-│
-├── genre/
-│   ├── domain/                        # Testes da entidade Genre
-│   ├── application/usecase/
-│   │   ├── unit/                      # Testes unitários (mock do repositório)
-│   │   └── integration/               # Testes de integração (repositório real)
-│   └── infra/                         # Testes do repositório in-memory
-│
-├── cast_member/
-│   ├── domain/                        # Testes da entidade CastMember
-│   ├── application/usecase/
-│   │   ├── unit/                      # Testes unitários (mock do repositório)
-│   │   └── integration/               # Testes de integração (repositório real)
-│   └── infra/                         # Testes do repositório in-memory
-│
-├── video/
-│   ├── domain/                        # Testes da entidade Video
-│   ├── application/usecase/
-│   │   ├── unit/                      # Testes unitários (mock do repositório)
-│   │   └── integration/               # Testes de integração (repositório real)
-│   └── infra/                         # Testes do repositório in-memory
-│
+```text
+src/
+├── conftest.py                       # Fixtures compartilhadas de autenticação
+├── core/
+│   ├── category/tests/               # Domínio, casos de uso e infraestrutura
+│   ├── genre/tests/
+│   ├── cast_member/tests/
+│   ├── video/tests/
+│   └── _shared/tests/                # Eventos e mensageria
 ├── django_project/
-│   ├── category_app/tests/            # Testes de integração Django (Category)
-│   ├── genre_app/tests/               # Testes de integração Django (Genre)
-│   ├── cast_member_app/tests/         # Testes de integração Django (CastMember)
-│   └── video_app/tests/               # Testes de integração Django (Video)
-│
-└── tests_e2e/                         # Testes end-to-end
+│   ├── category_app/tests/           # Views e repositórios Django
+│   ├── genre_app/tests/
+│   ├── cast_member_app/tests/
+│   └── video_app/tests/
+└── tests_e2e/                        # Fluxos completos pela API
 ```
 
 ## 🎯 Casos de Uso

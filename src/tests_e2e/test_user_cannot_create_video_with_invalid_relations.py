@@ -2,15 +2,10 @@ import pytest
 from rest_framework.test import APIClient
 
 
-@pytest.fixture
-def api_client() -> APIClient:
-    return APIClient()
-
-
 @pytest.mark.django_db
 class TestCreateVideoErrors:
-    def test_user_cannot_create_video_when_related_entities_do_not_exist(self, api_client: APIClient) -> None:
-        create_video_response = api_client.post(
+    def test_user_cannot_create_video_when_related_entities_do_not_exist(self, authenticated_client: APIClient) -> None:
+        create_video_response = authenticated_client.post(
             '/api/videos/',
             {
                 'title': 'John Wick',
@@ -30,7 +25,7 @@ class TestCreateVideoErrors:
         assert 'Genres with provided IDs not found' in create_video_response.data['error']
         assert 'Cast members with provided IDs not found' in create_video_response.data['error']
 
-        list_video_response = api_client.get('/api/videos/')
+        list_video_response = authenticated_client.get('/api/videos/')
 
         assert list_video_response.status_code == 200
         assert list_video_response.data == {

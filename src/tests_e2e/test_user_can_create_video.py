@@ -2,15 +2,11 @@ import pytest
 from rest_framework.test import APIClient
 
 
-@pytest.fixture
-def api_client() -> APIClient:
-    return APIClient()
-
 
 @pytest.mark.django_db
 class TestCreateVideo:
-    def test_user_can_create_video_with_related_entities(self, api_client: APIClient) -> None:
-        category_response = api_client.post(
+    def test_user_can_create_video_with_related_entities(self, authenticated_client: APIClient) -> None:
+        category_response = authenticated_client.post(
             '/api/categories/',
             {
                 'name': 'Movie',
@@ -18,7 +14,7 @@ class TestCreateVideo:
             },
             format='json',
         )
-        genre_response = api_client.post(
+        genre_response = authenticated_client.post(
             '/api/genres/',
             {
                 'name': 'Action',
@@ -26,7 +22,7 @@ class TestCreateVideo:
             },
             format='json',
         )
-        cast_member_response = api_client.post(
+        cast_member_response = authenticated_client.post(
             '/api/cast_members/',
             {
                 'name': 'Keanu Reeves',
@@ -35,7 +31,7 @@ class TestCreateVideo:
             format='json',
         )
 
-        create_video_response = api_client.post(
+        create_video_response = authenticated_client.post(
             '/api/videos/',
             {
                 'title': 'John Wick',
@@ -53,7 +49,7 @@ class TestCreateVideo:
         assert create_video_response.status_code == 201
         assert create_video_response.data['id']
 
-        get_video_response = api_client.get(f"/api/videos/{create_video_response.data['id']}/")
+        get_video_response = authenticated_client.get(f"/api/videos/{create_video_response.data['id']}/")
 
         assert get_video_response.status_code == 200
         assert get_video_response.data == {

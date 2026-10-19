@@ -4,3 +4,5 @@ djangorestframework
 pytest-django
 django-extensions
 pika
+PyJWT[crypto]
+python-dotenv

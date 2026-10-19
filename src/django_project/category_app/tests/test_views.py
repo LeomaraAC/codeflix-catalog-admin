@@ -31,12 +31,12 @@ def repository() -> DjangoORMCategoryRepository:
 
 @pytest.mark.django_db
 class TestListCategoryAPI:
-    def test_list_categories(self, category_films: Category, category_series: Category,
+    def test_list_categories(self, authenticated_client: APIClient, category_films: Category, category_series: Category,
                              repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
 
-        response = APIClient().get('/api/categories/')
+        response = authenticated_client.get('/api/categories/')
 
         expected_data = {
             'data': [
@@ -60,14 +60,14 @@ class TestListCategoryAPI:
         assert len(response.data['data']) == 2
         assert response.data == expected_data
 
-    def test_list_with_sorted_by_is_active_and_paginated(self, category_films: Category, category_series: Category,
+    def test_list_with_sorted_by_is_active_and_paginated(self, authenticated_client: APIClient, category_films: Category, category_series: Category,
                                                          category_animation: Category,
                                                          repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
         repository.save(category_animation)
 
-        response = APIClient().get('/api/categories/?order_by=is_active&current_page=2')
+        response = authenticated_client.get('/api/categories/?order_by=is_active&current_page=2')
 
         assert response.status_code == HTTP_200_OK
         assert len(response.data['data']) == 1
@@ -82,17 +82,17 @@ class TestListCategoryAPI:
 
 @pytest.mark.django_db
 class TestRetrieveCategoryAPI:
-    def test_when_invalid_uuid_then_return_400(self):
-        response = APIClient().get('/api/categories/123123/')
+    def test_when_invalid_uuid_then_return_400(self, authenticated_client: APIClient):
+        response = authenticated_client.get('/api/categories/123123/')
 
         assert response.status_code == HTTP_400_BAD_REQUEST
 
-    def test_return_category_by_id(self, category_films: Category, category_series: Category,
+    def test_return_category_by_id(self, authenticated_client: APIClient, category_films: Category, category_series: Category,
                                    repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         repository.save(category_series)
 
-        response = APIClient().get(f'/api/categories/{category_films.id}/')
+        response = authenticated_client.get(f'/api/categories/{category_films.id}/')
 
         expected_data = {
             'data': {
@@ -106,31 +106,31 @@ class TestRetrieveCategoryAPI:
         assert response.status_code == HTTP_200_OK
         assert response.data == expected_data
 
-    def test_return_404_when_category_not_found(self):
-        response = APIClient().get(f'/api/categories/{uuid4()}/')
+    def test_return_404_when_category_not_found(self, authenticated_client: APIClient):
+        response = authenticated_client.get(f'/api/categories/{uuid4()}/')
 
         assert response.status_code == HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
 class TestCreateCategoryAPI:
-    def test_when_payload_is_invalid_then_return_400(self):
+    def test_when_payload_is_invalid_then_return_400(self, authenticated_client: APIClient):
         payload = {
             'name': '',
             'description': 'Category for documentaries'
         }
 
-        response = APIClient().post('/api/categories/', data=payload, format='json')
+        response = authenticated_client.post('/api/categories/', data=payload, format='json')
 
         assert response.status_code == HTTP_400_BAD_REQUEST
         assert 'name' in response.data
 
-    def test_when_description_is_missing_then_create_category(self, repository: DjangoORMCategoryRepository):
+    def test_when_description_is_missing_then_create_category(self, authenticated_client: APIClient, repository: DjangoORMCategoryRepository):
         payload = {
             'name': 'Documentaries'
         }
 
-        response = APIClient().post('/api/categories/', data=payload, format='json')
+        response = authenticated_client.post('/api/categories/', data=payload, format='json')
 
         assert response.status_code == HTTP_201_CREATED
         assert 'id' in response.data
@@ -140,14 +140,14 @@ class TestCreateCategoryAPI:
         assert payload['name'] == category_created.name
         assert not category_created.description
 
-    def test_when_payload_is_valid_than_return_201(self, repository: DjangoORMCategoryRepository):
+    def test_when_payload_is_valid_than_return_201(self, authenticated_client: APIClient, repository: DjangoORMCategoryRepository):
         payload = {
             'name': 'Documentaries',
             'description': 'Category for documentaries',
             'is_active': True
         }
 
-        response = APIClient().post('/api/categories/', data=payload, format='json')
+        response = authenticated_client.post('/api/categories/', data=payload, format='json')
 
         assert response.status_code == HTTP_201_CREATED
         assert 'id' in response.data
@@ -162,7 +162,7 @@ class TestCreateCategoryAPI:
 
 @pytest.mark.django_db
 class TestUpdateCategoryAPI:
-    def test_when_payload_is_invalid_then_return_400(self):
+    def test_when_payload_is_invalid_then_return_400(self, authenticated_client: APIClient):
         payload = {
             'name': '',  # invalid name
             'description': 'Updated description'
@@ -170,13 +170,13 @@ class TestUpdateCategoryAPI:
         }
         url = '/api/categories/1234/'  # invalid UUID
 
-        response = APIClient().put(url, data=payload)
+        response = authenticated_client.put(url, data=payload)
 
         assert response.status_code == HTTP_400_BAD_REQUEST
         assert response.data == {'name': ['This field may not be blank.'], 'id': ['Must be a valid UUID.'],
                                  'is_active': ['This field is required.']}
 
-    def test_when_payload_is_valid_then_return_204(self, category_films: Category,
+    def test_when_payload_is_valid_then_return_204(self, authenticated_client: APIClient, category_films: Category,
                                                    repository: DjangoORMCategoryRepository):
         repository.save(category_films)
 
@@ -186,7 +186,7 @@ class TestUpdateCategoryAPI:
             'is_active': True
         }
 
-        response = APIClient().put(f'/api/categories/{category_films.id}/', data=payload)
+        response = authenticated_client.put(f'/api/categories/{category_films.id}/', data=payload)
 
         assert response.status_code == HTTP_204_NO_CONTENT
 
@@ -196,56 +196,56 @@ class TestUpdateCategoryAPI:
         assert updated_category.description == payload['description']
         assert updated_category.is_active is True
 
-    def test_when_category_not_found_then_return_404(self):
+    def test_when_category_not_found_then_return_404(self, authenticated_client: APIClient):
         payload = {
             'name': 'Nonexistent Category',
             'description': 'This category does not exist',
             'is_active': True
         }
 
-        response = APIClient().put(f'/api/categories/{uuid4()}/', data=payload)
+        response = authenticated_client.put(f'/api/categories/{uuid4()}/', data=payload)
 
         assert response.status_code == HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
 class TestDeleteCategoryAPI:
-    def test_when_id_invalid_uuid_then_return_400(self):
-        response = APIClient().delete('/api/categories/invalid-uuid/')
+    def test_when_id_invalid_uuid_then_return_400(self, authenticated_client: APIClient):
+        response = authenticated_client.delete('/api/categories/invalid-uuid/')
 
         assert response.status_code == HTTP_400_BAD_REQUEST
 
-    def test_when_category_does_exist_then_delete_and_return_204(self, category_series: Category,
+    def test_when_category_does_exist_then_delete_and_return_204(self, authenticated_client: APIClient, category_series: Category,
                                                                  repository: DjangoORMCategoryRepository):
         repository.save(category_series)
 
-        response = APIClient().delete(f'/api/categories/{category_series.id}/')
+        response = authenticated_client.delete(f'/api/categories/{category_series.id}/')
 
         assert response.status_code == HTTP_204_NO_CONTENT
         assert repository.get_by_id(category_series.id) is None
 
-    def test_when_category_not_found_then_return_404(self):
-        response = APIClient().delete(f'/api/categories/{uuid4()}/')
+    def test_when_category_not_found_then_return_404(self, authenticated_client: APIClient):
+        response = authenticated_client.delete(f'/api/categories/{uuid4()}/')
 
         assert response.status_code == HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
 class TestPartialUpdateCategoryAPI:
-    def test_can_update_name_only(self, category_films: Category, repository: DjangoORMCategoryRepository):
+    def test_can_update_name_only(self, authenticated_client: APIClient, category_films: Category, repository: DjangoORMCategoryRepository):
         repository.save(category_films)
         payload = {
             'name': 'Updated Films Name'
         }
 
-        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{category_films.id}/', data=payload)
         assert response.status_code == HTTP_204_NO_CONTENT
         updated_category = repository.get_by_id(category_films.id)
         assert updated_category.name == payload['name']  # updated
         assert updated_category.description == category_films.description  # unchanged
         assert updated_category.is_active == category_films.is_active  # unchanged
 
-    def test_can_update_description_only(self, category_films: Category,
+    def test_can_update_description_only(self, authenticated_client: APIClient, category_films: Category,
                                          repository: DjangoORMCategoryRepository):
         repository.save(category_films)
 
@@ -253,7 +253,7 @@ class TestPartialUpdateCategoryAPI:
             'description': 'Partially updated description'
         }
 
-        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{category_films.id}/', data=payload)
 
         assert response.status_code == HTTP_204_NO_CONTENT
 
@@ -263,7 +263,7 @@ class TestPartialUpdateCategoryAPI:
         assert updated_category.description == payload['description']  # updated
         assert updated_category.is_active == category_films.is_active  # unchanged
 
-    def test_can_update_is_active_only(self, category_series: Category,
+    def test_can_update_is_active_only(self, authenticated_client: APIClient, category_series: Category,
                                        repository: DjangoORMCategoryRepository):
         repository.save(category_series)
 
@@ -271,7 +271,7 @@ class TestPartialUpdateCategoryAPI:
             'is_active': True
         }
 
-        response = APIClient().patch(f'/api/categories/{category_series.id}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{category_series.id}/', data=payload)
 
         assert response.status_code == HTTP_204_NO_CONTENT
 
@@ -281,7 +281,7 @@ class TestPartialUpdateCategoryAPI:
         assert updated_category.description == category_series.description  # unchanged
         assert updated_category.is_active == payload['is_active']  # updated
 
-    def test_can_update_name_and_description(self, category_films: Category,
+    def test_can_update_name_and_description(self, authenticated_client: APIClient, category_films: Category,
                                              repository: DjangoORMCategoryRepository):
         repository.save(category_films)
 
@@ -290,7 +290,7 @@ class TestPartialUpdateCategoryAPI:
             'description': 'New Description'
         }
 
-        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{category_films.id}/', data=payload)
 
         assert response.status_code == HTTP_204_NO_CONTENT
 
@@ -300,22 +300,22 @@ class TestPartialUpdateCategoryAPI:
         assert updated_category.description == payload['description']  # updated
         assert updated_category.is_active == category_films.is_active  # unchanged
 
-    def test_when_category_not_found_then_return_404(self):
+    def test_when_category_not_found_then_return_404(self, authenticated_client: APIClient):
         payload = {
             'name': 'Nonexistent Category'
         }
 
-        response = APIClient().patch(f'/api/categories/{uuid4()}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{uuid4()}/', data=payload)
 
         assert response.status_code == HTTP_404_NOT_FOUND
 
-    def test_when_payload_is_empty_then_do_nothing(self, category_films: Category,
+    def test_when_payload_is_empty_then_do_nothing(self, authenticated_client: APIClient, category_films: Category,
                                                    repository: DjangoORMCategoryRepository):
         repository.save(category_films)
 
         payload = {}
 
-        response = APIClient().patch(f'/api/categories/{category_films.id}/', data=payload)
+        response = authenticated_client.patch(f'/api/categories/{category_films.id}/', data=payload)
 
         assert response.status_code == HTTP_204_NO_CONTENT
 

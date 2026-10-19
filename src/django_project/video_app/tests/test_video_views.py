@@ -85,6 +85,7 @@ class TestCreateVideoAPI:
         genre_repository: DjangoORMGenreRepository,
         cast_member_keanu: CastMember,
         cast_member_repository: DjangoORMCastMemberRepository,
+        authenticated_client: APIClient,
     ) -> None:
         payload = {
             'title': 'John Wick',
@@ -97,7 +98,7 @@ class TestCreateVideoAPI:
             'cast_members': [str(cast_member_keanu.id)],
         }
 
-        response = APIClient().post('/api/videos/', data=payload, format='json')
+        response = authenticated_client.post('/api/videos/', data=payload, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert 'id' in response.data
@@ -115,7 +116,7 @@ class TestCreateVideoAPI:
         assert video.genres == {genre_action.id}
         assert video.cast_members == {cast_member_keanu.id}
 
-    def test_when_related_entities_do_not_exist_then_return_400(self) -> None:
+    def test_when_related_entities_do_not_exist_then_return_400(self, authenticated_client: APIClient) -> None:
         payload = {
             'title': 'John Wick',
             'description': 'Action movie',
@@ -127,7 +128,7 @@ class TestCreateVideoAPI:
             'cast_members': ['dbd50345-dab7-4e93-8452-07a90c7c92ec'],
         }
 
-        response = APIClient().post('/api/videos/', data=payload, format='json')
+        response = authenticated_client.post('/api/videos/', data=payload, format='json')
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'Categories with provided IDs not found' in response.data['error']
@@ -137,8 +138,8 @@ class TestCreateVideoAPI:
 
 @pytest.mark.django_db
 class TestListVideoAPI:
-    def test_when_no_videos_exist_then_return_empty_list(self) -> None:
-        response = APIClient().get('/api/videos/')
+    def test_when_no_videos_exist_then_return_empty_list(self, authenticated_client: APIClient) -> None:
+        response = authenticated_client.get('/api/videos/')
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == {
@@ -150,8 +151,8 @@ class TestListVideoAPI:
             },
         }
 
-    def test_when_videos_exist_then_return_paginated_list(self, persisted_video: Video) -> None:
-        response = APIClient().get('/api/videos/')
+    def test_when_videos_exist_then_return_paginated_list(self, authenticated_client: APIClient, persisted_video: Video) -> None:
+        response = authenticated_client.get('/api/videos/')
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == {
@@ -179,8 +180,8 @@ class TestListVideoAPI:
 
 @pytest.mark.django_db
 class TestRetrieveVideoAPI:
-    def test_when_video_exists_then_return_200(self, persisted_video: Video) -> None:
-        response = APIClient().get(f'/api/videos/{persisted_video.id}/')
+    def test_when_video_exists_then_return_200(self, authenticated_client: APIClient, persisted_video: Video) -> None:
+        response = authenticated_client.get(f'/api/videos/{persisted_video.id}/')
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == {
@@ -198,7 +199,7 @@ class TestRetrieveVideoAPI:
             }
         }
 
-    def test_when_video_does_not_exist_then_return_404(self) -> None:
-        response = APIClient().get('/api/videos/95d0df35-0dbf-4e5d-a7e8-ee4fdf99597b/')
+    def test_when_video_does_not_exist_then_return_404(self, authenticated_client: APIClient) -> None:
+        response = authenticated_client.get('/api/videos/95d0df35-0dbf-4e5d-a7e8-ee4fdf99597b/')
 
         assert response.status_code == status.HTTP_404_NOT_FOUND

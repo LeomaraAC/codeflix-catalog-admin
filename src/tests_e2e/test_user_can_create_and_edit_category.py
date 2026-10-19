@@ -2,10 +2,6 @@ import pytest
 from rest_framework.test import APIClient
 
 
-@pytest.fixture
-def api_client() -> APIClient:
-    return APIClient()
-
 
 @pytest.fixture
 def base_url() -> str:
@@ -14,13 +10,13 @@ def base_url() -> str:
 
 @pytest.mark.django_db
 class TestCreateAndEditCategory:
-    def test_user_can_create_and_edit_category(self, api_client: APIClient, base_url: str) -> None:
+    def test_user_can_create_and_edit_category(self, authenticated_client: APIClient, base_url: str) -> None:
         # Acessa listagem e verifica que não tem nenhuma categoria criada
-        list_response = api_client.get(base_url)
+        list_response = authenticated_client.get(base_url)
         assert list_response.data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}
 
         # Cria uma categoria
-        create_response = api_client.post(
+        create_response = authenticated_client.post(
             base_url,
             {
                 'name': 'Movie',
@@ -31,7 +27,7 @@ class TestCreateAndEditCategory:
         created_category_id = create_response.data['id']
 
         # Verifica que categoria criada aparece na listagem
-        assert api_client.get(base_url).data == {
+        assert authenticated_client.get(base_url).data == {
             'data': [
                 {
                     'id': created_category_id,
@@ -44,7 +40,7 @@ class TestCreateAndEditCategory:
         }
 
         # Edita categoria criada
-        edit_response = api_client.put(
+        edit_response = authenticated_client.put(
             f'/api/categories/{created_category_id}/',
             {
                 'name': 'Documentary',
@@ -55,7 +51,7 @@ class TestCreateAndEditCategory:
         assert edit_response.status_code == 204
 
         # Verifica que categoria editada aparece na listagem
-        assert api_client.get(base_url).data == {
+        assert authenticated_client.get(base_url).data == {
             'data': [
                 {
                     'id': created_category_id,
@@ -67,13 +63,13 @@ class TestCreateAndEditCategory:
             'meta': {'current_page': 1, 'per_page': 2, 'total': 1},
         }
 
-    def test_user_can_create_and_delete_category(self, api_client: APIClient, base_url: str) -> None:
+    def test_user_can_create_and_delete_category(self, authenticated_client: APIClient, base_url: str) -> None:
         # Acessa listagem e verifica que não tem nenhuma categoria criada
-        list_response = api_client.get(base_url)
+        list_response = authenticated_client.get(base_url)
         assert list_response.data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}
 
         # Cria uma categoria
-        create_response = api_client.post(
+        create_response = authenticated_client.post(
             base_url,
             {
                 'name': 'Music',
@@ -84,7 +80,7 @@ class TestCreateAndEditCategory:
         created_category_id = create_response.data['id']
 
         # Verifica que categoria criada aparece na listagem
-        assert api_client.get(base_url).data == {
+        assert authenticated_client.get(base_url).data == {
             'data': [
                 {
                     'id': created_category_id,
@@ -97,8 +93,8 @@ class TestCreateAndEditCategory:
         }
 
         # Deleta categoria criada
-        delete_response = api_client.delete(f'/api/categories/{created_category_id}/')
+        delete_response = authenticated_client.delete(f'/api/categories/{created_category_id}/')
         assert delete_response.status_code == 204
 
         # Verifica que a listagem está vazia novamente
-        assert api_client.get(base_url).data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}
+        assert authenticated_client.get(base_url).data == {'data': [], 'meta': {'current_page': 1, 'per_page': 2, 'total': 0}}

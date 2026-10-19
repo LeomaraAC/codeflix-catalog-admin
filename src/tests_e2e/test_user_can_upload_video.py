@@ -10,9 +10,6 @@ from src.django_project.video_app import views as video_views
 from src.django_project.video_app.models import AudioVideoMedia, Video
 
 
-@pytest.fixture
-def api_client() -> APIClient:
-    return APIClient()
 
 
 @pytest.fixture
@@ -24,8 +21,8 @@ def local_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> LocalStora
 
 @pytest.mark.django_db
 class TestUploadVideo:
-    def test_user_can_upload_video_file(self, api_client: APIClient, local_storage: LocalStorage,) -> None:
-        category_response = api_client.post(
+    def test_user_can_upload_video_file(self, authenticated_client: APIClient, local_storage: LocalStorage,) -> None:
+        category_response = authenticated_client.post(
             '/api/categories/',
             {
                 'name': 'Movie',
@@ -33,7 +30,7 @@ class TestUploadVideo:
             },
             format='json',
         )
-        genre_response = api_client.post(
+        genre_response = authenticated_client.post(
             '/api/genres/',
             {
                 'name': 'Action',
@@ -41,7 +38,7 @@ class TestUploadVideo:
             },
             format='json',
         )
-        cast_member_response = api_client.post(
+        cast_member_response = authenticated_client.post(
             '/api/cast_members/',
             {
                 'name': 'Keanu Reeves',
@@ -49,7 +46,7 @@ class TestUploadVideo:
             },
             format='json',
         )
-        create_video_response = api_client.post(
+        create_video_response = authenticated_client.post(
             '/api/videos/',
             {
                 'title': 'John Wick',
@@ -72,7 +69,7 @@ class TestUploadVideo:
             content_type='video/mp4',
         )
 
-        upload_response = api_client.patch(
+        upload_response = authenticated_client.patch(
             f'/api/videos/{video_id}/',
             data={'video_file': video_file},
             format='multipart',
